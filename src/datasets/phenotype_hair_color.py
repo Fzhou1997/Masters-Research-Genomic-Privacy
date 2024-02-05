@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 
 hair_color_dict = {
@@ -69,42 +67,33 @@ hair_color_dict = {
 }
 
 
-def preprocess_hair_colors(string):
+def convert_hair_colors(string):
+    string = string.lower()
     if string in hair_color_dict:
         return hair_color_dict[string]
     else:
-        return ''
+        return None
 
 
-class PhenotypeHairColor:
-    def __init__(self,
-                 load_path,
-                 save_path,
-                 delimiter=None,
-                 na_values=None,
-                 unsupported_providers=None,
-                 hair_color_dict=None):
-        self.load_path = load_path
-        self.save_path = save_path
-        self.delimiter = delimiter
-        self.na_values = na_values
-        self.unsupported_providers = unsupported_providers
-        self.hair_color_dict = hair_color_dict
+def load_raw(file_path):
+    dataframe = pd.read_csv(file_path,
+                            delimiter=';',
+                            na_values=['-', 'rather not say'],
+                            usecols=['user_id', 'Hair Color'],
+                            converters={'Hair Color': convert_hair_colors})
+    dataframe = dataframe.rename(columns={'Hair Color': 'hair_color'})
+    dataframe = dataframe[~dataframe.apply(lambda row: row.str.contains('exome-vcf|IYG').any(), axis=1)]
+    dataframe = dataframe.dropna()
+    dataframe = dataframe.drop_duplicates()
+    dataframe = dataframe.reset_index(drop=True)
+    return dataframe
 
-    def load(self, file_name):
-        file_path = os.path.join(self.load_path, file_name)
-        dataframe = pd.read_csv(file_path,
-                                delimiter=self.delimiter,
-                                na_values=self.na_values,
-                                usecols=['user_id', 'Hair Color'],
-                                converters={'Hair Color': preprocess_hair_colors})
-        dataframe = dataframe.rename(columns={'Hair Color': 'hair_color'})
-        dataframe = dataframe[~dataframe['hair_color'].isin(self.unsupported_providers)]
-        dataframe = dataframe.dropna()
-        return dataframe
 
-    def save(self, dataframe, file_name):
-        file_path = os.path.join(self.save_path, file_name)
-        dataframe.to_csv(file_path, index=False)
-        return file_path
+def load_processed(file_path):
+    dataframe = pd.read_csv(file_path)
+    return dataframe
 
+
+def save(dataframe, file_path):
+    dataframe.to_csv(file_path, index=False)
+    return file_path
