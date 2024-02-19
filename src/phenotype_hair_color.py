@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 hair_color_dict = {
@@ -89,11 +91,11 @@ def load_raw(file_path):
     return dataframe
 
 
-def load_processed(file_path):
-    dataframe = pd.read_csv(file_path)
+def load_processed(data_path):
+    dataframe = pd.read_csv(os.path.join(data_path, 'phenotype_hair_color.csv'))
     return dataframe
 
 
-def save(dataframe, file_path):
-    dataframe.to_csv(file_path, index=False)
-    return file_path
+def save(phenotype, file_path):
+    phenotype.to_csv(file_path, index=False)
+
