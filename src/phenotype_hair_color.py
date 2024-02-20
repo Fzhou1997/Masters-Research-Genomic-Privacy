@@ -96,6 +96,6 @@ def load_processed(data_path):
     return dataframe
 
 
-def save(phenotype, file_path):
-    phenotype.to_csv(file_path, index=False)
+def save(phenotype, data_path):
+    phenotype.to_csv(os.path.join(data_path, 'phenotype_hair_color.csv'), index=False)
 
