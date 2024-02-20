@@ -78,6 +78,12 @@ def convert_hair_colors(string):
 
 
 def load_raw(file_path):
+    """Load and process the raw phenotype csv file.
+    Args:
+        file_path (str): the path to the raw csv file.
+    Returns:
+        DataFrame: the processed dataframe.
+    """
     dataframe = pd.read_csv(file_path,
                             delimiter=';',
                             na_values=['-', 'rather not say'],
@@ -92,6 +98,12 @@ def load_raw(file_path):
 
 
 def load_processed(data_path):
+    """Loads the processed phenotypes csv file.
+    Args:
+        data_path (str): the directory where the csv file resides.
+    Returns:
+        DataFrame: the phenotype dataframe.
+    """
     dataframe = pd.read_csv(os.path.join(data_path, 'phenotype_hair_color.csv'))
     return dataframe
 
