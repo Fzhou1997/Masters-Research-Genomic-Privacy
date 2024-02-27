@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch
 from torch import nn
 
@@ -9,43 +11,61 @@ else:
     device = 'cpu'
 
 
-class MatrixFactorization(nn.Module):
-    def __init__(self, num_users, num_rsids, latent_size=400):
+class MatrixFactorizationModel(nn.Module):
+    def __init__(self, num_users, num_rsids, num_features=400):
         super().__init__()
-        self.latent_size = latent_size
-        self.users_embedding = nn.Embedding(num_users, latent_size, sparse=True)
-        self.rsids_embedding = nn.Embedding(num_rsids, latent_size, sparse=True)
+        self.latent_size = num_features
+        self.user_embeddings = nn.Embedding(num_users, num_features, sparse=True)
+        self.rsid_embeddings = nn.Embedding(num_rsids, num_features, sparse=True)
 
     def forward(self, user, rsid):
-        return self.users_embedding(user) @ self.rsids_embedding(rsid)
+        user_embedding = self.user_embeddings(user)
+        rsid_embedding = self.rsid_embeddings(rsid)
+        return (user_embedding * rsid_embedding).sum(dim=1)
 
 
-def train(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    model.train()
-    for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+def get_genome_mask(genome_array):
+    mask = genome_array != -1
+    return torch.tensor(genome_array, dtype=torch.float), torch.tensor(mask, dtype=torch.bool)
 
-        # Compute prediction error
-        pred = model(user, rsid)
-        loss = loss_fn(pred, y)
 
-        # Backpropagation
+def train(model, optimizer, criterion, num_epochs, genome_tensor, mask):
+    for epoch in range(num_epochs):
+        user_idx, item_idx = np.where(mask)
+        user_idx = torch.tensor(user_idx)
+        item_idx = torch.tensor(item_idx)
+
+        predicted = model(user_idx, item_idx)
+        actual = genome_tensor[user_idx, item_idx]
+
+        loss = criterion(predicted, actual)
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        optimizer.zero_grad()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item():.4f}')
 
 
+def impute(model, genome_tensor, mask):
+    num_users, num_rsids = genome_tensor.shape
+    with torch.no_grad():
+        predicted = model(torch.arange(num_users), torch.arange(num_rsids))
+        predicted = torch.round(predicted).clamp(min=0, max=2)
+        predicted = predicted.type(torch.int)
+        predicted[~mask] = genome_tensor[~mask]
+    return predicted
 
-if __name__ == "__main__":
-    # define model
-    mf = MatrixFactorization(10, 20).to(device)
 
-    # define loss function and optimizer
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(mf.parameters(), lr=1e-3)
-
+if __name__ == '__main__':
+    genome_array = np.load('../data/opensnp/genotype/npy/G_build37_autosomal.npy')
+    num_users, num_rsids = genome_array.shape
+    num_features = 400
+    model = MatrixFactorizationModel(num_users, num_rsids, num_features).to(device)
+    genome_tensor, mask = get_genome_mask(genome_array)
+    genome_tensor = genome_tensor.to(device)
+    mask = mask.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    criterion = nn.MSELoss()
+    num_epoches = 10
+    train(model, optimizer, criterion, num_epoches, genome_tensor, mask)
+    imputed_genome = impute(model, genome_tensor, mask)
