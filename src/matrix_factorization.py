@@ -83,13 +83,13 @@ def impute(model, genome_tensor, mask_tensor):
 if __name__ == '__main__':
     genome_array = np.load('../data/opensnp/genotype/npy/G_build37_autosomal.npy')
     num_users, num_rsids = genome_array.shape
-    num_features = 384
+    num_features = 512
     model = MatrixFactorizationModel(num_users, num_rsids, num_features).to(device)
     genome_tensor, mask_tensor = get_genome_mask(genome_array)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()
     numb_epochs = 32
-    train(model, optimizer, criterion, numb_epochs, genome_tensor, mask_tensor, batch_size=32)
-    accuracy = evaluate(model, genome_tensor, mask_tensor, batch_size=32)
+    train(model, optimizer, criterion, numb_epochs, genome_tensor, mask_tensor, batch_size=64)
+    accuracy = evaluate(model, genome_tensor, mask_tensor, batch_size=64)
     print(f'Accuracy: {accuracy:.4f}')
     #imputed_genome = impute(model, genome_tensor, mask_tensor)
