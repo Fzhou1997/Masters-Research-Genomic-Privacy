@@ -7,38 +7,17 @@ from tqdm import tqdm
 
 from genotype_autosomal import get_csv_list, load_csv
 
+import numpy as np
 
-class Loader:
-    def __init__(self, csv_path, build_id):
-        self.csv_path = csv_path
-        self.build_id = build_id
 
-    def __call__(self, user_id):
-        return load_csv(self.csv_path, f"user{user_id}_build{self.build_id}_autosomal.csv")
+def get_npy_user_ids(npy_path, build):
+    files_list = os.listdir(npy_path)
+    user_ids = [int(re.search(r'user(\d+)_', file).group(1)) for file in files_list if int(re.search(r'build(\d+)_', file).group(1)) == build and file.startswith('user')]
+    return user_ids
 
-def get_csv_summary(csv_path, user_ids, build_id, n_proc=1):
-    """Compute the sum of occurrences for each allele in the common RSIDs for the genomic data.
-    Args:
-        csv_path (str): the directory of the processed data.
-        user_ids (list): the list of users to parse.
-        build_id (int): the human reference assembly build.
-    Returns:
-        (DataFrama, set): The dataframe of sums, and the set of common RSIDs.
-    """
 
-    if n_proc > 1:
-        with mp.Pool(n_proc) as p:
-            dataframes = p.map(Loader(csv_path, build_id), user_ids)
-    else:
-        dataframes = []
-        for user_id in user_ids:
-            dataframes.append(load_csv(csv_path, f"user{user_id}_build{build_id}_autosomal.csv"))
-
-    common_rsids = set.intersection(*map(lambda dataframe: set(dataframe.index), dataframes))
-    summary_dataframe = pd.concat(dataframes)
-    summary_dataframe = summary_dataframe.groupby(summary_dataframe.index).sum()
-    summary_dataframe = summary_dataframe.loc[sorted(list(common_rsids))]
-    return summary_dataframe, common_rsids
+def load_npy(user_id, build=37):
+    return np.load(f'../data/opensnp/genotype/npy/user{user_id}_build{build}_autosomal.npy')
 
 
 if __name__ == '__main__':
