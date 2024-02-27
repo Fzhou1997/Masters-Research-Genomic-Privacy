@@ -1,3 +1,5 @@
+import os
+import re
 import pandas as pd
 import multiprocessing as mp
 
@@ -40,14 +42,22 @@ def get_csv_summary(csv_path, user_ids, build_id, n_proc=1):
 
 
 if __name__ == '__main__':
-    csv_dataframe = get_csv_list('../data/opensnp/genotype/csv')
+    build = 37
+    user_ids = sorted(get_npy_user_ids('../data/opensnp/genotype/npy', build))
 
-    # filter by human reference assembly build
-    csv_dataframe = csv_dataframe[csv_dataframe['build_id'] == 37]
+    npy_vectors = [load_npy(user_id, build=build) for user_id in user_ids]
+    G = np.vstack(npy_vectors)
+    np.save(f'../data/opensnp/genotype/npy/G_build{build}_autosomal.npy', G)
 
-    # count up allele occurences, filter by RSIDs found throughout all user data
-    csv_summary, common_rsids = get_csv_summary('../data/opensnp/genotype/csv', [1, 6], 36, n_proc=2)
-    csv_summary.to_csv('../data/opensnp/genotype/sum/csv_summary.csv')
+    print(G.shape)
+    print(G[:10, :10])
 
-    print(len(common_rsids))
-    print(csv_summary.head(20))
+    print('Count of NaN values:', np.count_nonzero(G == -1))
+    missing = np.argwhere(G == -1)
+    print(missing.shape)
+    users_missing, users_missing_counts = np.unique(missing[:, 0], return_counts=True)
+    print("user missing", users_missing)
+    print("num users missing", len(users_missing))
+    rsids_missing, rsids_missing_counts = np.unique(missing[:, 1], return_counts=True)
+    print("rsid missing", rsids_missing)
+    print("num rsids missing", len(rsids_missing))
