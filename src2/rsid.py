@@ -10,7 +10,6 @@ optional arguments with the --help flag.
 """
 import argparse
 import os
-import warnings
 import pandas as pd
 
 import dist
