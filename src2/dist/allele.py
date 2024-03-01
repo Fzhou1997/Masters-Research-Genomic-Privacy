@@ -1,11 +1,8 @@
 import os
-import re
-import numpy as np
 import pandas as pd
-from collections import Counter
 from tqdm import tqdm
 
-from proc.loaders import SNPSLoader
+from data.loaders import SNPSLoader
 
 
 class Distribution:
@@ -24,17 +21,17 @@ class Distribution:
 
 
 def from_filenames(
-    filenames: list[str], loader: SNPSLoader, verbose=False, rsids=()
+    filenames: list[str], hair_colors: list[str], loader: SNPSLoader, verbose=False, rsids=()
 ) -> dict[int, Distribution]:
     rsids = set(rsids)
 
-    iterator = iter(filenames)
+    iterator = zip(filenames, hair_colors)
     if verbose:
         iterator = tqdm(iterator)
 
     # dictionary of build ID -> list of list of genotype alleles
     builds = dict()
-    for filename in iterator:
+    for filename, hair_color in iterator:
         res = loader.load(filename, expand_alleles=True)
         if res is None:
             continue
@@ -42,6 +39,7 @@ def from_filenames(
 
         if rsids:
             snps = snps.loc[list(set(snps.index) & rsids)]
+        snps['hair_color'] = hair_color
 
         if build not in builds:
             builds[build] = []
@@ -51,7 +49,7 @@ def from_filenames(
     distributions = dict()
     for build in builds.keys():
         data = pd.concat(builds[build])\
-            .groupby(['rsid', 'chrom', 'pos'])[
+            .groupby(['rsid', 'chrom', 'pos', 'hair_color'])[
                 ['A', 'C', 'G', 'T', 'D', 'I', '-']]\
             .sum()
         distributions[build] = Distribution(data, build)

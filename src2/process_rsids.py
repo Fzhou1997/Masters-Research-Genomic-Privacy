@@ -10,10 +10,9 @@ optional arguments with the --help flag.
 """
 import argparse
 import os
-import pandas as pd
 
 import dist
-from proc import loaders
+from data import loaders
 
 
 def make_arg_parser():

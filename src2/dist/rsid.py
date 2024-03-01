@@ -6,7 +6,7 @@ from pandas import Series
 from collections import Counter
 from tqdm import tqdm
 
-from proc.loaders import SNPSLoader
+from data.loaders import SNPSLoader
 
 
 class Distribution:

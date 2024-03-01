@@ -1,9 +1,8 @@
 import argparse
 import os
-import pandas as pd
 
 import dist
-from proc import loaders
+from data import loaders
 
 
 def make_arg_parser():
@@ -13,16 +12,12 @@ def make_arg_parser():
         help="Assembly build to use, usually can be 36/37/38",
         default=37, type=lambda value: int(value))
     parser.add_argument(
-        "--threshold",
-        help="Threshold to filter how often RSIDs must occur amongst genotypes",
-        default=0.97, type=lambda value: float(value))
-    parser.add_argument(
         "--raw",
         help="Directory where raw genotype files are stored",
         default='data/opensnp/raw')
     parser.add_argument(
         "--out",
-        help="Directory where output RSID files are stored",
+        help="Directory where output allele files are stored",
         default='data/opensnp/out')
     parser.add_argument(
         "--res",
@@ -53,7 +48,7 @@ if __name__ == '__main__':
 
         loader = loaders.SNPSLoader(args.raw, res_path=args.res)
         distributions = dist.allele.from_filenames(
-            filenames, loader, verbose=True, rsids=rsids)
+            filenames, phenotype_loader.df.hair_color, loader, verbose=True, rsids=rsids)
 
         for build in distributions:
             distributions[build].save(args.out)
