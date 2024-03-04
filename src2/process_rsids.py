@@ -54,7 +54,6 @@ if __name__ == '__main__':
     ]
 
     distribution = dist.rsid.from_csv(args.out, build=args.build)
-
     if not distribution:
         # load the files, this one might take some time if they're not saved already (~20mins)
         print('Distribution not found, parsing raw genotypes...')

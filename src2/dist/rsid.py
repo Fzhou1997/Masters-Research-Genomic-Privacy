@@ -82,7 +82,7 @@ def from_csv(out, build) -> Distribution:
         filepath (str): the full path to the CSV file.
 
     Returns:
-        Distribution: the RSID distribution object.
+        Distribution: the RSID distribution object, or None if it could not be read.
     """
     for filename in os.listdir(out):
         if filename.startswith(f'rsids_build{build}'):

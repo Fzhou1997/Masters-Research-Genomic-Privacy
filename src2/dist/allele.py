@@ -1,12 +1,13 @@
 import os
 import pandas as pd
+from pandas import DataFrame
 from tqdm import tqdm
 
 from data.loaders import SNPSLoader
 
 
 class Distribution:
-    def __init__(self, data, build):
+    def __init__(self, data: DataFrame, build: int):
         self.data = data
         self.build = build
 
@@ -23,6 +24,18 @@ class Distribution:
 def from_filenames(
     filenames: list[str], hair_colors: list[str], loader: SNPSLoader, verbose=False, rsids=()
 ) -> dict[int, Distribution]:
+    """Generate a dictionary of allele distributions from a list of filenames.
+
+    Args:
+        filenames (list[str]): the names of the genotype files.
+        hair_colors (list[str]): the hair colors associated with each genotype file.
+        loader (SNPSLoader): the SNP loader object.
+        verbose (bool, optional): whether to print debug statements.
+        rsids (bool, optional): if included, the RSIDs to filter the distributions to.
+
+    Returns:
+        dict[int, Distribution]: a dictionary mapping build IDs to distributions.
+    """
     rsids = set(rsids)
 
     iterator = zip(filenames, hair_colors)
@@ -57,6 +70,14 @@ def from_filenames(
 
 
 def from_csv(out, build) -> Distribution:
+    """Load an allele distribution from a generated CSV file.
+
+    Args:
+        filepath (str): the full path to the CSV file.
+
+    Returns:
+        Distribution: the allele distribution object, or None if it could not be read.
+    """
     for filename in os.listdir(out):
         if filename.startswith(f'alleles_build{build}'):
             filepath = os.path.join(out, filename)
