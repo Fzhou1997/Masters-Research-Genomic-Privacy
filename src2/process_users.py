@@ -100,14 +100,16 @@ if __name__ == '__main__':
         matrix = pd.concat(user_vectors, axis=1).T
         matrix.to_csv(os.path.join(args.out, f'matrix_build{args.build}.csv'))
 
-        # make our probability matrices
-        colors, counts = np.unique(hair_colors, return_counts=True)
+    hair_colors = phenotype_loader.df.loc[matrix.index].hair_color
 
-"""
-    we want, for each RSID...
-        p(0|black), p(0|brown), p(0|blonde)
-        p(1|black), p(1|brown), p(1|blonde)
-        p(2|black), p(2|brown), p(2|blonde)
-    and we know
-        p(n|h) = #(n,h)/#(h)
-"""
+    # make our probability matrices
+    context = dict()
+    for hair_color in hair_colors.unique():
+        context[hair_color] = (matrix[hair_colors == hair_color] != -1).sum()
+    probabilities = dict()
+    for hair_color in hair_colors.unique():
+        probabilities[hair_color] = dict()
+        for n_alternate in range(0, 3):
+            probabilities[hair_color][n_alternate] =\
+                (matrix[hair_colors == hair_color] == n_alternate).sum() \
+                / context[hair_color]
