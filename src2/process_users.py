@@ -8,14 +8,6 @@ import dist
 from data import loaders
 
 
-def bayesian_imputation(distribution: dist.allele.Distribution):
-    counts = distribution.data\
-        .groupby(['rsid', 'hair_color'])[['A', 'C', 'G', 'T', 'D', 'I']]\
-        .sum()
-    probs = counts.div(counts.sum(axis=1), axis=0)
-    return probs
-
-
 def make_arg_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -72,40 +64,50 @@ if __name__ == '__main__':
         .sum()\
         .idxmax(axis=1)
 
-    # # create our probability model to perform bayesian imputation
-    # bayes = bayesian_imputation(distribution)
-    # # ^ this variable is a dataframe with a multi-index
-    # # ^ can be accessed w/ bayes.loc[rsid, hair_color] to get P(allele|rsid,hair)
-
     # collect formatted user vectors
-    user_ids = []
-    user_vectors = []
-    for user_id in tqdm(phenotype_loader.df.index):
-        filename = phenotype_loader.get_filename(user_id)
-        res = snps_loader.load(filename, expand_alleles=True)
-        if res is None:
-            continue
-        snps, build = res
-        if build != args.build:
-            continue
-        # trim down by common RSIDs!
-        snps = snps.loc[list(set(snps.index) & rsids)]
+    matrix_filename = os.path.join(args.out, f'matrix_build{args.build}.csv')
+    try:
+        matrix = pd.read_csv(matrix_filename, index_col=0)
+    except:
+        user_ids = []
+        user_vectors = []
+        for user_id in tqdm(phenotype_loader.df.index):
+            filename = phenotype_loader.get_filename(user_id)
+            res = snps_loader.load(filename, expand_alleles=True)
+            if res is None:
+                continue
+            snps, build = res
+            if build != args.build:
+                continue
+            # trim down by common RSIDs!
+            snps = snps.loc[list(set(snps.index) & rsids)]
 
-        user_vector = []
-        for rsid, allele in zip(reference_alleles.index, reference_alleles.values):
-            # -1 - missing data
-            #  0 - all reference
-            #  1 - one alternate
-            #  2 - two alternates
-            if rsid not in snps.index or snps.loc[rsid, '-'] > 0:
-                user_vector.append(-1)
-            else:
-                user_vector.append(2 - snps.loc[rsid, allele])
-        user_vector = pd.Series(
-            user_vector, index=reference_alleles.index, name=user_id)
-        user_ids.append(user_id)
-        user_vectors.append(user_vector)
+            user_vector = []
+            for rsid, allele in zip(reference_alleles.index, reference_alleles.values):
+                # -1 - missing data
+                #  0 - all reference
+                #  1 - one alternate
+                #  2 - two alternates
+                if rsid not in snps.index or snps.loc[rsid, '-'] > 0:
+                    user_vector.append(np.nan)
+                else:
+                    user_vector.append(2 - snps.loc[rsid, allele])
+            user_vector = pd.Series(
+                user_vector, index=reference_alleles.index, name=user_id)
+            user_ids.append(user_id)
+            user_vectors.append(user_vector)
 
-    matrix = pd.concat(user_vectors, axis=1).T
-    matrix.to_csv(os.path.join(args.out, f'matrix_build{args.build}.csv'))
-    # can be read again with pd.read_csv(PATH, index_col=0)
+        matrix = pd.concat(user_vectors, axis=1).T
+        matrix.to_csv(os.path.join(args.out, f'matrix_build{args.build}.csv'))
+
+        # make our probability matrices
+        colors, counts = np.unique(hair_colors, return_counts=True)
+
+"""
+    we want, for each RSID...
+        p(0|black), p(0|brown), p(0|blonde)
+        p(1|black), p(1|brown), p(1|blonde)
+        p(2|black), p(2|brown), p(2|blonde)
+    and we know
+        p(n|h) = #(n,h)/#(h)
+"""
