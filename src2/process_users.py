@@ -64,6 +64,10 @@ if __name__ == '__main__':
         .sum()\
         .idxmax(axis=1)
 
+    # AA, AG, ... -> 0 alt allele, 1, or 2...
+    # P(AG or AC or AT) = P(AG) + P(AC) + P(AT) = P(A occuring 1 time) = P(1)
+    # compute user x alternate allele count matrix
+
     # collect formatted user vectors
     matrix_filename = os.path.join(args.out, f'matrix_build{args.build}.csv')
     try:

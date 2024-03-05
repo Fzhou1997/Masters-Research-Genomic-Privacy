@@ -1,0 +1,31 @@
+src
+    data
+        genotype.py > loader/preprocessor class
+            load > df['rsid', 'chrom', 'pos', 'genotype', {genotype_one_hot}]
+            impute > df['rsid', 'chrom', 'pos', 'genotype', {genotype_one_hot}, 'genotype_imputed']
+            expand > df['rsid', 'chrom', 'pos', 'genotype', {genotype_one_hot}, //{dist_genotype}// 'genotype_imputed', 'allele_1', 'allele_2', {allele_one_hot}]
+            encode > df['rsid', 'chrom', 'pos', 'genotype', {genotype_one_hot}, //{dist_genotype}// 'genotype_imputed', 'allele_1', 'allele_2', {allele_one_hot}, //{dist_alleles}// 'alt_alleles']
+            final output:
+                df['rsid', 'chrom', 'pos', 'genotype', {genotype_one_hot}, //{dist_genotype}// 'genotype_imputed', 'allele_1', 'allele_2', {allele_one_hot}, //{dist_alleles}// 'alt_alleles']
+        phenotype.py
+            load > df['user_id', 'dob', 'chrom', 'hair', 'provider', 'file_id']
+            filter > df['user_id', 'hair_color']
+            final output:
+                df['user_id', 'hair_color']
+        genome.py
+            load > df['user_id', {zip(rsid, chrom, pos): alt_alleles}, 'hair_color']
+            final output:
+                df['user_id', {zip(rsid, chrom, pos): alt_alleles}, 'hair_color']
+        beacon.py
+    dist
+        genotype.py
+            counts > used to get genotype counts, df['rsid', 'chrom', 'pos', {}]
+            frequencies > used to get genotype frequencies
+        allele.py
+            counts > used to get alternate/reference allele counts
+            frequencies > used to get alternate/reference allele counts
+        rsid.py > used to get most common RSIDs shared amongst user records
+
+    # scripts
+    preprocess.py > create genome dataframe from raw
+    predict_hair_color.py > predict hair color from genome dataframe

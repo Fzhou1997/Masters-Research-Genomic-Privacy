@@ -1,3 +1,4 @@
+import itertools
 import os
 import warnings
 import pandas as pd
@@ -104,7 +105,12 @@ class PhenotypeLoader:
     """
 
     def __init__(self, raw_path: str, id: int, verbose=False):
-        path = os.path.join(raw_path, f'phenotypes_{id}.csv')
+        phenotype_filename = ""
+        for filename in os.listdir(raw_path):
+            if filename.startswith('phenotypes_') and filename.endswith('.csv'):
+                phenotype_filename = filename
+                break
+        path = os.path.join(raw_path, phenotype_filename)
         self.df = pd.read_csv(
             path,
             sep=';',
@@ -224,6 +230,11 @@ class SNPSLoader:
             df = df[df.chrom.isin(map(str, range(1, 23)))]
             df.fillna('--', inplace=True)
             if expand_alleles:
+                alleles = ['A', 'C', 'G', 'T', 'D', 'I', '-']
+                combinations = list(itertools.product(alleles, repeat=2))
+                combinations = [''.join(combination) for combination in combinations]
+                for combination in combinations:
+                    df[combination] = (df['genotype'] == combination).astype(int)
                 for letter in ['A', 'C', 'G', 'T', 'D', 'I', '-']:
                     df[letter] = df['genotype']\
                         .apply(lambda genotype: genotype.count(letter))
