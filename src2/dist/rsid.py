@@ -84,12 +84,15 @@ def from_csv(out, build) -> Distribution:
     Returns:
         Distribution: the RSID distribution object, or None if it could not be read.
     """
-    for filename in os.listdir(out):
-        if filename.startswith(f'rsids_build{build}'):
-            result = re.match(r'rsids_build\d+_(\d+)samples.csv', filename)
-            count = int(result.group(1))
-            filepath = os.path.join(out, filename)
-            data = pd.read_csv(filepath, index_col=0, header=None,
-                               names=[result.group(0)]).squeeze()
-            return Distribution(data, count, build)
+    try:
+        for filename in os.listdir(out):
+            if filename.startswith(f'rsids_build{build}'):
+                result = re.match(r'rsids_build\d+_(\d+)samples.csv', filename)
+                count = int(result.group(1))
+                filepath = os.path.join(out, filename)
+                data = pd.read_csv(filepath, index_col=0, header=None,
+                                   names=[result.group(0)]).squeeze()
+                return Distribution(data, count, build)
+    except:
+        pass
     return None
