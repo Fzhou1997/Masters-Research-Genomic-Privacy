@@ -1,11 +1,7 @@
 import argparse
 import os
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
 
-import dist
-from data import loaders
+from legacy.src2.data import loaders
 
 
 def make_arg_parser():
@@ -50,9 +46,9 @@ if __name__ == '__main__':
     snps_loader = loaders.SNPSLoader(args.raw, res_path=args.res)
 
     # load in our allele distribution
-    distribution = dist.allele.from_csv(args.out, args.build)
+    distribution = legacy.src2.dist.allele.from_csv(args.out, args.build)
     if not distribution:
-        distributions = dist.allele.from_filenames(
+        distributions = legacy.src2.dist.allele.from_filenames(
             filenames, phenotype_loader.df.hair_color, snps_loader, verbose=True, rsids=rsids)
         for build in distributions:
             distributions[build].save(args.out)
@@ -101,7 +97,7 @@ if __name__ == '__main__':
     #         if build != args.build:
     #             continue
     #         # trim down by common RSIDs!
-    #         snps = snps.loc[list(set(snps.index) & rsids)]
+    #         snps = snps.loc[list(set(snps.index) & stat)]
     #
     #         user_vector = []
     #         for rsid, allele in zip(reference_alleles.index, reference_alleles.values):
@@ -142,7 +138,7 @@ if __name__ == '__main__':
 """
 Allele-wise imputation:
 Model:
-3 (hair color) x 45k (rsids) x 36 (possible allele pairs, e.g. "AA", "AC", "AG", etc) matrix of probabilities
+3 (hair color) x 45k (stat) x 36 (possible allele pairs, e.g. "AA", "AC", "AG", etc) matrix of probabilities
 Predict:
 model[hair_color][rsid]: a list of probabilities for allele pairs "AA", "AC", "AG", etc
 random.choice(c=allele_pairs, p=model[hair_color][rsid])

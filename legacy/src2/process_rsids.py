@@ -1,4 +1,4 @@
-"""rsids.py
+"""stat.py
 
 This script is used to extract information about the RSIDs in our OpenSNP
 dataset. We extract the distribution of RSIDs throughout the genotype files,
@@ -11,8 +11,7 @@ optional arguments with the --help flag.
 import argparse
 import os
 
-import dist
-from data import loaders
+from legacy.src2.data import loaders
 
 
 def make_arg_parser():
@@ -53,12 +52,12 @@ if __name__ == '__main__':
         for user_id in phenotype_loader.df.index
     ]
 
-    distribution = dist.rsid.from_csv(args.out, build=args.build)
+    distribution = legacy.src2.dist.rsid.from_csv(args.out, build=args.build)
     if not distribution:
         # load the files, this one might take some time if they're not saved already (~20mins)
         print('Distribution not found, parsing raw genotypes...')
         snps_loader = loaders.SNPSLoader(args.raw, res_path=args.res)
-        distributions = dist.rsid.from_filenames(
+        distributions = legacy.src2.dist.rsid.from_filenames(
             filenames, snps_loader, verbose=True)
 
         for build in distributions.keys():

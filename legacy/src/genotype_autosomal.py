@@ -175,7 +175,7 @@ def process_user_txts(txt_path, txt_list, csv_path, user_id):
 
 
 def load_txt(txt_path, txt_name):
-    snps = SNPs(os.path.join(txt_path, txt_name), resources_dir='../res')
+    snps = SNPs(os.path.join(txt_path, txt_name), resources_dir='../../res')
     snps.sort()
     return snps
 

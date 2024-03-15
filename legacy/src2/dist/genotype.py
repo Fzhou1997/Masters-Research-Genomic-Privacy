@@ -3,7 +3,7 @@ import os
 from pandas import DataFrame
 from tqdm import tqdm
 
-from src2.data.loaders import SNPSLoader
+from legacy.src2.data.loaders import SNPSLoader
 
 
 class Distribution:
