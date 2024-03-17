@@ -1,46 +1,58 @@
 import itertools
 import os
 
-import numpy as np
 import pandas as pd
+
+ALLELES = 'ACGTDI-'
+GENOTYPES = [''.join(item) for item in itertools.product('ACGTDI', repeat=2)] + ['--']
+TRANSFORMATION = pd.DataFrame(columns=list(ALLELES), index=GENOTYPES)
+for genotype in GENOTYPES:
+    for allele in ALLELES:
+        TRANSFORMATION.at[genotype, allele] = genotype.count(allele)
 
 
 class Genotypes:
-    def __init__(self):
-        self.genotype_counts = None
+    def __init__(self, build):
+        self.build = build
+        self.num_genotypes = 0
+        self.genotypes = pd.DataFrame()
 
-    def append(self, genotype_counts):
-        if not self.genotype_counts:
-            self.genotype_counts = genotype_counts
-        else:
-            self.genotype_counts = pd.concat([self.genotype_counts, genotype_counts])
+    def concat_genotype(self, genotype):
+        if genotype.get_build() != self.build:
+            raise ValueError('Reference genome build mismatch')
+        self.num_genotypes += 1
+        one_hot = genotype.get_one_hot()
+        self.genotypes = pd.concat([self.genotypes, one_hot], ignore_index=False)
+        self.genotypes = self.genotypes.groupby(level='rsid').sum()
+
+    def get_build(self):
+        return self.build
+
+    def get_num_genotypes(self):
+        return self.num_genotypes
 
     def get_genotype_counts(self):
-        self.genotype_counts = self.genotype_counts.groupby(level='rsid').sum()
-        return self.genotype_counts.copy()
+        return self.genotypes
 
     def get_genotype_probabilities(self):
-        genotype_probabilities = self.get_genotype_counts()
-        genotype_probabilities = genotype_probabilities.div(genotype_probabilities.sum(axis=1), axis=0)
-        return genotype_probabilities
+        return self.genotypes.div(self.genotypes.sum(axis=1), axis=0)
+
+    def get_allele_counts(self):
+        return self.genotypes.dot(TRANSFORMATION)
 
     def get_reference_alleles(self):
-        genotype_counts = self.get_genotype_counts()
-        genotypes = list(itertools.product('ACGTDI', repeat=2))
-        genotypes.append('--')
-        alleles = list('ACGTDI-')
-        transformation_matrix = np.zeros((len(genotypes), len(alleles)))
-        for i, genotype in enumerate(genotypes):
-            for j, allele in enumerate(alleles):
-                transformation_matrix[i, j] = genotype.count(allele)
-        allele_counts = genotype_counts.dot(transformation_matrix)
-        reference_alleles = allele_counts.idxmax(axis=1)
-        return reference_alleles
+        return self.get_allele_counts().idxmax(axis=1)
 
     def save(self, out_path):
-        self.genotype_counts = self.genotype_counts.groupby(level='rsid').sum()
-        out = self.genotype_counts.reset_index()
-        out.to_csv(os.path.join(out_path, f'genotype_counts.csv'), index=False)
+        out = self.genotypes.reset_index()
+        os.makedirs(out_path, exist_ok=True)
+        out.to_csv(os.path.join(out_path, f'build_{self.build}_count_{self.num_genotypes}_genotypes.csv'), index=False)
 
     def load(self, data_path):
-        self.genotype_counts = pd.read_csv(os.path.join(data_path, 'genotype_counts.csv'), index_col=0)
+        for file_name in os.listdir(data_path):
+            if file_name.startswith('build_') and file_name.endswith('_genotypes.csv'):
+                self.build = int(file_name.split('_')[1])
+                self.num_genotypes = int(file_name.split('_')[3])
+                self.genotypes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
+                self.probabilities = self.genotypes.div(self.genotypes.sum(axis=1), axis=0)
+                return

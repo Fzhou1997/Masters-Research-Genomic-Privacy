@@ -16,7 +16,8 @@ CHROMOSOMES_INVALID = r'[^0-9XYMT]+'
 ALLELES = 'ACGTDI-'
 ALLELES_INVALID = r'[^ACGTDI-0]+'
 ALLELES_NA = r'.*[-0]+.*'
-GENOTYPES = list(itertools.product('ACGTDI', repeat=2)) + ['--']
+GENOTYPES = [''.join(item) for item in itertools.product('ACGTDI', repeat=2)] + ['--']
+
 
 class Genotype:
     def __init__(self):
@@ -82,6 +83,9 @@ class Genotype:
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
 
+    def is_valid(self):
+        return len(self.genotype.index) > 0
+
     def get_user_id(self):
         return self.user_id
 
@@ -92,33 +96,29 @@ class Genotype:
         return self.genotype[['chrom', 'pos']]
 
     def get_genotype(self):
-        return self.genotype['genotype']
+        return self.genotype[['genotype']]
 
     def get_one_hot(self):
         one_hot = self.genotype.loc[:, []]
-        genotypes = list(itertools.product('ACGTDI', repeat=2))
-        genotypes.append('--')
-        for genotype in genotypes:
-            one_hot[genotype] = (self.genotype['genotype'] == genotype).astype(int)
+        for genotype in GENOTYPES:
+            one_hot[genotype] = (self.genotype['genotype'] == GENOTYPES).astype(int)
         return one_hot
 
     def get_allele_counts(self):
         allele_counts = self.genotype.loc[:, []]
-        alleles = 'ACGTDI-'
-        for allele in alleles:
+        for allele in ALLELES:
             allele_counts[allele] = self.genotype['genotype'].apply(lambda genotype: genotype.count(allele))
         return allele_counts
 
     def impute_bayesian(self, genotype_probabilities):
         target_rsids = self.genotype[self.genotype['genotype'] == '--'].index
-        genotypes = list(itertools.product('ACGTDI', repeat=2))
         target_probabilities = [genotype_probabilities[rsid] for rsid in target_rsids]
         for i, rsid in enumerate(target_rsids):
-            self.genotype.at[rsid, 'genotype'] = random.choice(a=genotypes, p=target_probabilities[i])
+            self.genotype.at[rsid, 'genotype'] = random.choice(a=GENOTYPES, p=target_probabilities[i])
 
-    def encode_alternate_allele_count(self, reference_allele):
+    def encode_alternate_allele_count(self, reference_alleles):
         self.genotype['genotype'] = self.genotype['genotype'].apply(
-            lambda genotype: 2 - genotype.count(reference_allele) if genotype != '--' else -1)
+            lambda genotype: 2 - genotype.count(reference_alleles) if genotype != '--' else -1)
 
     def save(self, out_path):
         out = self.genotype.reset_index()
