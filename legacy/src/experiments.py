@@ -39,4 +39,4 @@ if __name__ == '__main__':
     print("num users missing", len(users_missing))
     rsids_missing, rsids_missing_counts = np.unique(missing[:, 1], return_counts=True)
     print("rsid missing", rsids_missing)
-    print("num stat missing", len(rsids_missing))
+    print("num stats missing", len(rsids_missing))

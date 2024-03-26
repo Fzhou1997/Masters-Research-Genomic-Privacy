@@ -83,7 +83,7 @@ class Phenotypes:
         self.phenotypes = None
         self.feature_name = ''
 
-    def from_features(self, data_path, feature_name, converter=None):
+    def from_feature(self, data_path, feature_name, converter=None):
         phenotypes_file_name = ''
         for file_name in os.listdir(data_path):
             if file_name.startswith('phenotypes_') and file_name.endswith('.csv'):
@@ -91,7 +91,7 @@ class Phenotypes:
                 break
         if not phenotypes_file_name:
             raise FileNotFoundError('No phenotypes file found')
-        self.feature_name = feature_name
+        self.feature_name = re.sub(r'\s+', '_', re.sub(r'[^a-zA-Z0-9_\s]+', ' ', feature_name.strip().lower()))
         self.phenotypes = pd.read_csv(os.path.join(data_path, phenotypes_file_name),
                                       delimiter=';',
                                       na_values=['-', 'rather not say'],
@@ -103,6 +103,9 @@ class Phenotypes:
         self.phenotypes = self.phenotypes.groupby(self.phenotypes.index).last()
         self.phenotypes = self.phenotypes.sort_index()
 
+    def is_encoded_one_hot(self):
+        return self.phenotypes.shape[1] > 1
+
     def get_phenotypes(self):
         return self.phenotypes.copy()
 
@@ -110,7 +113,10 @@ class Phenotypes:
         return self.phenotypes.index
 
     def get_values(self):
-        return self.phenotypes[self.feature_name].unique.tolist()
+        return list(self.phenotypes[self.feature_name].unique())
+
+    def get_one_hot(self):
+        return pd.get_dummies(self.phenotypes[self.feature_name], prefix=self.feature_name)
 
     def save(self, out_path):
         out = self.phenotypes.reset_index()

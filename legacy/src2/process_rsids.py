@@ -1,4 +1,4 @@
-"""stat.py
+"""stats.py
 
 This script is used to extract information about the RSIDs in our OpenSNP
 dataset. We extract the distribution of RSIDs throughout the genotype files,

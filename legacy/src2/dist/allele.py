@@ -58,7 +58,7 @@ def from_filenames(
             builds[build] = []
         builds[build].append(snps)
 
-    # reduce the alleles for each assembly build to stat
+    # reduce the alleles for each assembly build to stats
     distributions = dict()
     for build in builds.keys():
         data = pd.concat(builds[build])\

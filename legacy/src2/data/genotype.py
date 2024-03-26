@@ -103,7 +103,7 @@ class GenotypeProcessor:
         return expanded
 
     def encode(self, genotype: DataFrame, reference_alleles: Series) -> DataFrame:
-        """Appends alternate allele stat to the dataframe"""
+        """Appends alternate allele stats to the dataframe"""
         encoded = genotype.copy()  # should this be deep or shallow copy?
         for index, allele in reference_alleles.items():
             encoded.loc[index, 'alternate_allele_count'] =\

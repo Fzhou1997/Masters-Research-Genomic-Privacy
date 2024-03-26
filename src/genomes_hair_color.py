@@ -48,7 +48,7 @@ class GenomesHairColor:
 
     def from_opensnps(self, genotype_data_path, phenotype_data_path, genotype_out_path, phenotype_out_path, counts_out_path, res_path):
         phenotypes = Phenotypes()
-        phenotypes.from_features(phenotype_data_path, 'Hair Color', converter=convert_hair_colors)
+        phenotypes.from_feature(phenotype_data_path, 'Hair Color', converter=convert_hair_colors)
         phenotypes.save(phenotype_out_path)
         phenotypes_df = phenotypes.get_phenotypes()
         user_ids = phenotypes.get_user_ids()
@@ -129,6 +129,6 @@ class GenomesHairColor:
 
 if __name__ == '__main__':
     genomes = GenomesHairColor()
-    genomes.from_opensnps('../data/genotype/raw', '../data/phenotype/raw', '../data/genotype/out', '../data/phenotype/out', '../data/stat', '../res')
-    # genomes.resume('../data/genotype/out', '../data/phenotype/out', '../data/stat', 0)
+    genomes.from_opensnps('../data/genotype/raw', '../data/phenotype/raw', '../data/genotype/out', '../data/phenotype/out', '../data/stats', '../res')
+    # genomes.resume('../data/genotype/out', '../data/phenotype/out', '../data/stats', 0)
 

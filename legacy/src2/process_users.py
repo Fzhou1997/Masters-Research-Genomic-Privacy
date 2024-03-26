@@ -97,7 +97,7 @@ if __name__ == '__main__':
     #         if build != args.build:
     #             continue
     #         # trim down by common RSIDs!
-    #         snps = snps.loc[list(set(snps.index) & stat)]
+    #         snps = snps.loc[list(set(snps.index) & stats)]
     #
     #         user_vector = []
     #         for rsid, allele in zip(reference_alleles.index, reference_alleles.values):
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 """
 Allele-wise imputation:
 Model:
-3 (hair color) x 45k (stat) x 36 (possible allele pairs, e.g. "AA", "AC", "AG", etc) matrix of probabilities
+3 (hair color) x 45k (stats) x 36 (possible allele pairs, e.g. "AA", "AC", "AG", etc) matrix of probabilities
 Predict:
 model[hair_color][rsid]: a list of probabilities for allele pairs "AA", "AC", "AG", etc
 random.choice(c=allele_pairs, p=model[hair_color][rsid])

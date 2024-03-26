@@ -19,6 +19,17 @@ class Rsids:
         self.rsids = self.rsids.groupby(['rsid', 'chrom', 'pos']).sum().reset_index()
         self.rsids = self.rsids.set_index('rsid')
 
+    def concat_genotypes(self, genotypes):
+        for genotype in genotypes:
+            if genotype.get_build() != self.build:
+                raise ValueError('Reference genome build mismatch')
+            self.num_genotypes += 1
+            rsids = genotype.get_rsids()
+            rsids['count'] = 1
+            self.rsids = pd.concat([self.rsids, rsids], ignore_index=False)
+        self.rsids = self.rsids.groupby(['rsid', 'chrom', 'pos']).sum().reset_index()
+        self.rsids = self.rsids.set_index('rsid')
+
     def get_build(self):
         return self.build
 
@@ -37,6 +48,9 @@ class Rsids:
     def get_common_rsids(self):
         return self.rsids[self.rsids['count'] == self.num_genotypes].index
 
+    def sort_rsids(self):
+        self.rsids = self.rsids.sort_values(by=['chrom', 'pos'], ascending=[True, True])
+
     def save(self, out_path):
         out = self.rsids.reset_index()
         os.makedirs(out_path, exist_ok=True)
@@ -49,3 +63,4 @@ class Rsids:
                 self.num_genotypes = int(file_name.split('_')[3])
                 self.rsids = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
                 return
+        raise FileNotFoundError('No rsids file found')

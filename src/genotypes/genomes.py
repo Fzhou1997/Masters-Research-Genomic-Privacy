@@ -1,13 +1,13 @@
 import os
 
 import pandas as pd
+from torch import tensor
 
 
 class Genomes:
     def __init__(self, build):
         self.build = build
         self.num_genotypes = 0
-        self.num_phenotypes = 0
         self.genotypes = pd.DataFrame()
         self.phenotypes = pd.DataFrame()
 
@@ -21,14 +21,16 @@ class Genomes:
         self.genotypes = pd.concat([self.genotypes, user_genotype], ignore_index=False)
 
     def concat_phenotypes(self, phenotypes):
-        self.num_phenotypes += 1
-        self.phenotypes = pd.concat([self.phenotypes, phenotypes], ignore_index=False)
+        self.phenotypes = pd.concat([self.phenotypes, phenotypes.get_one_hot()], ignore_index=False)
 
     def filter_genotypes_na(self):
         self.genotypes = self.genotypes.dropna(axis='columns')
 
     def filter_phenotypes_na(self):
         self.phenotypes = self.phenotypes.dropna(axis='rows')
+
+    def filter_phenotypes_genotypes(self):
+        self.phenotypes = self.phenotypes.loc[self.genotypes.index]
 
     def get_build(self):
         return self.build
@@ -54,19 +56,44 @@ class Genomes:
     def get_genomes(self):
         return pd.concat([self.genotypes, self.phenotypes], axis=1, ignore_index=False)
 
+    def get_genotypes_tensor(self):
+        genotypes_values = self.genotypes.values
+        return tensor(genotypes_values)
+
+    def get_phenotypes_tensor(self):
+        phenotypes_values = self.phenotypes.values
+        return tensor(phenotypes_values)
+
+    def get_tensor(self):
+        genomes_values = self.get_genomes().values
+        return tensor(genomes_values)
+
+    def sort_rsids(self, rsids):
+        self.genotypes = self.genotypes[rsids]
+
     def save(self, out_path):
-        out = self.get_genomes().reset_index()
         os.makedirs(out_path, exist_ok=True)
-        out.to_csv(os.path.join(out_path, f'build_{self.build}_genotype_count_{self.num_genotypes}_phenotype_count_{self.num_phenotypes}_genomes.csv'), index=False)
+        genotypes_out = self.genotypes.reset_index()
+        phenotypes_out = self.phenotypes.reset_index()
+        genotypes_out.to_csv(os.path.join(out_path, f'build_{self.build}_count_{self.num_genotypes}_genomes_genotype.csv'), index=False)
+        phenotypes_out.to_csv(os.path.join(out_path, f'build_{self.build}_count_{self.num_genotypes}_genomes_phenotype.csv'), index=False)
 
     def load(self, data_path):
+        genotype_loaded = False
+        phenotype_loaded = False
         for file_name in os.listdir(data_path):
-            if file_name.startswith('build_') and file_name.endswith('_genomes.csv'):
-                self.build = int(file_name.split('_')[1])
+            if file_name.startswith(f'build_{self.build}_') and file_name.endswith('_genomes_genotype.csv'):
                 self.num_genotypes = int(file_name.split('_')[3])
-                self.num_phenotypes = int(file_name.split('_')[5])
-                genomes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
-                self.genotypes = genomes[genomes.columns[:-self.num_phenotypes]]
-                self.genotypes = self.genotypes.dropna(axis='rows')
-                self.phenotypes = genomes[genomes.columns[-self.num_phenotypes:]]
-                return
+                self.genotypes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
+                genotype_loaded = True
+            if file_name.startswith(f'build_{self.build}_') and file_name.endswith('_genomes_phenotype.csv'):
+                self.num_genotypes = int(file_name.split('_')[3])
+                self.phenotypes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
+                phenotype_loaded = True
+            if genotype_loaded and phenotype_loaded:
+                if len(self.genotypes) != len(self.phenotypes):
+                    raise ValueError('Genotype and phenotype mismatch')
+                else:
+                    return
+        raise FileNotFoundError('No genomes files found')
+

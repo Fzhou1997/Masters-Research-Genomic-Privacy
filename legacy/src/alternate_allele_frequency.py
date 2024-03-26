@@ -39,7 +39,7 @@ def process_users_npys(csv_path, npy_path, user_ids, build_id, reference_allele_
 
 
 if __name__ == "__main__":
-    # read in the CSVs of our allele stat
+    # read in the CSVs of our allele stats
     csv_summary = pd.read_csv('../data/opensnp/genotype/sum/csv_summary.csv', index_col=0)
     print(csv_summary.head(10))
     print('\n-------\n')
