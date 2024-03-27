@@ -4,7 +4,6 @@ import os
 import warnings
 
 import pandas as pd
-from numpy import random
 from snps import SNPs
 
 RSIDS_INVALID = r'[^0-9a-z]+'
@@ -14,6 +13,7 @@ ALLELES = 'ACGTDI-'
 ALLELES_INVALID = r'[^ACGTDI\-0]+'
 ALLELES_NA = r'.*[-0]+.*'
 GENOTYPES = [''.join(item) for item in itertools.product('ACGT', repeat=2)] + [''.join(item) for item in itertools.product('DI', repeat=2)] + ['--']
+
 
 
 class Genotype:

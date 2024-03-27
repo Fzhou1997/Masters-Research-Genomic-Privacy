@@ -21,7 +21,7 @@ class Genomes:
         self.genotypes = pd.concat([self.genotypes, user_genotype], ignore_index=False)
 
     def concat_phenotypes(self, phenotypes):
-        self.phenotypes = pd.concat([self.phenotypes, phenotypes.get_one_hot()], ignore_index=False)
+        self.phenotypes = pd.concat([self.phenotypes, phenotypes.get_phenotypes()], ignore_index=False)
 
     def filter_genotypes_na(self):
         self.genotypes = self.genotypes.dropna(axis='columns')
@@ -37,9 +37,6 @@ class Genomes:
 
     def get_num_genotypes(self):
         return self.num_genotypes
-
-    def get_num_phenotypes(self):
-        return self.num_phenotypes
 
     def get_user_ids(self):
         return self.genotypes.index

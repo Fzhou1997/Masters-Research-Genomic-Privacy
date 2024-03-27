@@ -1,6 +1,4 @@
 import os
-import re
-import threading
 import multiprocessing as mp
 
 from enum import IntEnum
@@ -8,19 +6,22 @@ from enum import IntEnum
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from src.genotypes.genomes import Genomes
-from src.genotypes.genotype import Genotype
-from src.genotypes.genotypes import Genotypes
-from src.genotypes.phenotypes import Phenotypes, convert_hair_colors
-from src.genotypes.rsids import Rsids
+from src.genomes.genomes import Genomes
+from src.genomes.genotype import Genotype
+from src.genomes.genotypes import Genotypes
+from src.genomes.phenotype import Phenotype, HAIR_COLOR_ENCODER_READABLE, HAIR_COLOR_ENCODER_ORDINAL
+from src.genomes.rsids import Rsids
 
 AUTOSOMAL = [str(i) for i in range(1, 23)]
 
 
 # region <phenotypes format>
 def _preprocess_phenotypes_format(data_path, out_path):
-    phenotypes = Phenotypes()
-    phenotypes.from_feature(data_path, 'Hair Color', converter=convert_hair_colors)
+    phenotypes = Phenotype()
+    phenotypes.from_feature(data_path, 'hair_color')
+    phenotypes.clean()
+    phenotypes.encode(HAIR_COLOR_ENCODER_READABLE)
+    phenotypes.encode(HAIR_COLOR_ENCODER_ORDINAL)
     phenotypes.save(out_path)
     return phenotypes
 
@@ -339,7 +340,7 @@ class HairColorDataset(Dataset):
         if stage <= PreprocessingStage.PHENOTYPES_FORMAT:
             phenotypes = _preprocess_phenotypes_format(phenotype_data_path, phenotype_out_path)
         else:
-            phenotypes = Phenotypes()
+            phenotypes = Phenotype()
             phenotypes.load(phenotype_out_path, 'hair_color')
         user_ids = phenotypes.get_user_ids()
         if stage <= PreprocessingStage.GENOTYPE_FORMAT:

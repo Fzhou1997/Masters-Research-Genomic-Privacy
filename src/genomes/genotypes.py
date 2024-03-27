@@ -66,9 +66,9 @@ class Genotypes:
                     self.num_genotypes = int(file_name.split('_')[3])
                     self.genotypes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
                     return
-            raise FileNotFoundError('No genotypes file found')
+            raise FileNotFoundError('No genomes file found')
         else:
             if os.path.exists(os.path.join(data_path, file_name)):
                 self.genotypes = pd.read_csv(os.path.join(data_path, file_name), index_col=0)
             else:
-                raise FileNotFoundError('No genotypes file found')
+                raise FileNotFoundError('No genomes file found')

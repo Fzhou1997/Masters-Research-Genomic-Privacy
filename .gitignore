@@ -1,7 +1,2 @@
-/datasets
-/envs
-**/.DS_Store
-/data/
+/data/opensnps/
 /res/
-/resources/
-**/__pycache__

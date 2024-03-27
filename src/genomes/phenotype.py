@@ -1,8 +1,9 @@
 import os
+import re
 
 import pandas as pd
 
-hair_color_dict = {
+HAIR_COLOR_ENCODER_READABLE = {
     ' light blonde as a child and medium blonde as an adult. ': 'blonde',
     'auburn': 'brown',
     'auburn (reddish-brown)': 'brown',
@@ -68,46 +69,66 @@ hair_color_dict = {
     'very dark brown': 'brown',
 }
 
-
-def convert_hair_colors(string):
-    string = string.lower()
-    if string in hair_color_dict:
-        return hair_color_dict[string]
-    else:
-        return None
+HAIR_COLOR_ENCODER_ORDINAL = {
+    'blonde': 0,
+    'brown': 1,
+    'black': 2,
+}
 
 
-def load_raw(file_path):
-    """Load and process the raw phenotype csv file.
-    Args:
-        file_path (str): the path to the raw csv file.
-    Returns:
-        DataFrame: the processed dataframe.
-    """
-    dataframe = pd.read_csv(file_path,
-                            delimiter=';',
-                            na_values=['-', 'rather not say'],
-                            usecols=['user_id', 'Hair Color'],
-                            converters={'Hair Color': convert_hair_colors})
-    dataframe = dataframe.rename(columns={'Hair Color': 'hair_color'})
-    dataframe = dataframe[~dataframe.apply(lambda row: row.str.contains('exome-vcf|IYG').any(), axis=1)]
-    dataframe = dataframe.dropna()
-    dataframe = dataframe.drop_duplicates()
-    dataframe = dataframe.reset_index(drop=True)
-    return dataframe
+class Phenotype:
+    def __init__(self):
+        self.feature = ''
+        self.phenotypes = None
 
+    def from_feature(self, data_path, feature):
+        file_path = ''
+        for file_name in os.listdir(data_path):
+            match = re.match(r'phenotypes_(.+)\.csv', file_name)
+            if match:
+                file_path = os.path.join(data_path, file_name)
+                break
+        if not file_path:
+            raise FileNotFoundError('No valid phenotypes file found')
+        self.feature = re.sub(r'\s+', '_', re.sub(r'[^a-zA-Z0-9_\s]+', ' ', feature.strip().lower()))
+        self.phenotypes = pd.read_csv(file_path, delimiter=';', index_col=0)
+        self.phenotypes.columns = self.phenotypes.columns.str.replace(r'[^a-zA-Z0-9_\s]+', ' ', regex=True).str.strip().str.lower().str.replace(r'\s+', '_', regex=True)
+        self.phenotypes = self.phenotypes[self.feature]
 
-def load_processed(data_path):
-    """Loads the processed phenotypes csv file.
-    Args:
-        data_path (str): the directory where the csv file resides.
-    Returns:
-        DataFrame: the phenotype dataframe.
-    """
-    dataframe = pd.read_csv(os.path.join(data_path, 'phenotype_hair_color.csv'))
-    return dataframe
+    def clean(self):
+        self.phenotypes = self.phenotypes.groupby(self.phenotypes.index).last()
+        self.phenotypes = self.phenotypes.sort_index()
+        self.phenotypes = self.phenotypes.dropna()
+        if self.phenotypes.empty:
+            raise ValueError('No valid phenotypes found')
 
+    def encode(self, encoder):
+        self.phenotypes[self.feature] = self.phenotypes[self.feature].map(encoder)
+        self.phenotypes = self.phenotypes.dropna()
+        if self.phenotypes.empty:
+            raise ValueError('No valid phenotypes found')
 
-def save(phenotype, data_path):
-    phenotype.to_csv(os.path.join(data_path, 'phenotype_hair_color.csv'), index=False)
+    def get_feature(self):
+        return self.feature
 
+    def get_phenotypes(self):
+        return self.phenotypes
+
+    def get_user_ids(self):
+        return self.phenotypes.index
+
+    def get_values(self):
+        return list(self.phenotypes[self.feature].unique())
+
+    def get_one_hot(self):
+        return pd.get_dummies(self.phenotypes[self.feature], prefix=self.feature)
+
+    def save(self, out_path):
+        out = self.phenotypes.reset_index()
+        os.makedirs(out_path, exist_ok=True)
+        out.to_csv(os.path.join(out_path, f'phenotype_{self.feature}.csv'), index=False)
+
+    def load(self, data_path, feature_name):
+        file_path = os.path.join(data_path, f'phenotype_{feature_name}.csv')
+        self.feature = feature_name
+        self.phenotypes = pd.read_csv(file_path, index_col=0)
