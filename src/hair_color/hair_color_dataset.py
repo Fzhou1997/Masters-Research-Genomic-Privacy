@@ -3,28 +3,24 @@ import multiprocessing as mp
 
 from enum import IntEnum
 
+import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-from src.genomes.genomes import Genomes
-from src.genomes.genotype import Genotype
-from src.genomes.genotypes import Genotypes
-from src.genomes.phenotype import Phenotype, HAIR_COLOR_ENCODER_READABLE, HAIR_COLOR_ENCODER_ORDINAL
-from src.genomes.rsids import Rsids
+from genomes import *
 
 AUTOSOMAL = [str(i) for i in range(1, 23)]
 
 
 # region <phenotypes format>
-def _preprocess_phenotypes_format(data_path, out_path):
+def _preprocess_phenotypes(in_path, out_path):
     phenotypes = Phenotype()
-    phenotypes.from_feature(data_path, 'hair_color')
+    phenotypes.from_feature(in_path, 'hair_color')
     phenotypes.clean()
     phenotypes.encode(HAIR_COLOR_ENCODER_READABLE)
     phenotypes.encode(HAIR_COLOR_ENCODER_ORDINAL)
     phenotypes.save(out_path)
     return phenotypes
-
 
 # endregion </phenotypes format>
 
@@ -315,12 +311,10 @@ class PreprocessingStage(IntEnum):
 
 
 class HairColorDataset(Dataset):
-    def __init__(self, build, chromosomes=AUTOSOMAL):
-        self.build = build
-        self.chromosomes = chromosomes
-        self.genomes = None
+    def __init__(self):
         self.genotypes_tensor = None
         self.phenotypes_tensor = None
+        self.class_weights = None
 
     def __len__(self):
         return self.genotypes_tensor.shape[0]
@@ -328,23 +322,22 @@ class HairColorDataset(Dataset):
     def __getitem__(self, idx):
         return self.genotypes_tensor[idx], self.phenotypes_tensor[idx]
 
-    def preprocess(self,
-                   genotype_data_path,
-                   phenotype_data_path,
-                   genotype_out_path,
-                   phenotype_out_path,
-                   genomes_out_path,
-                   stats_path,
-                   res_path,
-                   stage=PreprocessingStage.ALL):
+    def get_class_weights(self):
+        return self.class_weights
+
+    def preprocess(self, in_path, out_path, res_path, build, chromosomes, stage=PreprocessingStage.ALL):
+        phenotype_in_path = os.path.join(in_path, '/phenotypes/')
+        genotype_in_path = os.path.join(in_path, '/genotypes/')
+        phenotype_out_path = os.path.join(out_path, '/phenotypes/')
+        genotype_out_path = os.path.join(out_path, '/genotypes/')
+        genomes_out_path = os.path.join(out_path, '/genomes/')
         if stage <= PreprocessingStage.PHENOTYPES_FORMAT:
-            phenotypes = _preprocess_phenotypes_format(phenotype_data_path, phenotype_out_path)
+            phenotypes = _preprocess_phenotypes(phenotype_in_path, phenotype_out_path)
         else:
             phenotypes = Phenotype()
-            phenotypes.load(phenotype_out_path, 'hair_color')
-        user_ids = phenotypes.get_user_ids()
+            phenotypes.load(phenotype_out_path)
         if stage <= PreprocessingStage.GENOTYPE_FORMAT:
-            _preprocess_genotypes_format_parallel(genotype_data_path, genotype_out_path, res_path, user_ids, self.build,
+            _preprocess_genotypes_format_parallel(genotype_in_path, genotype_out_path, res_path, phenotypes.get_user_ids(), self.build,
                                                   self.chromosomes)
         if stage <= PreprocessingStage.GENOTYPE_IMPUTE:
             _preprocess_genotypes_impute_parallel(stats_path, genotype_out_path, phenotypes, self.build)
@@ -360,16 +353,17 @@ class HairColorDataset(Dataset):
         self.phenotypes_tensor = self.genomes.get_phenotypes_tensor().float()
         assert self.genotypes_tensor.shape[0] == self.phenotypes_tensor.shape[0]
 
-    def load(self, data_path):
-        self.genomes = Genomes(build=self.build)
-        self.genomes.load(data_path)
-        self.genotypes_tensor = self.genomes.get_genotypes_tensor().float()
-        self.phenotypes_tensor = self.genomes.get_phenotypes_tensor().float()
-        assert self.genotypes_tensor.shape[0] == self.phenotypes_tensor.shape[0]
+    def load(self, in_path):
+        self.genotypes_tensor = torch.load(os.path.join(in_path, 'genotypes.pt'))
+        self.phenotypes_tensor = torch.load(os.path.join(in_path, 'phenotypes.pt'))
+        classes, counts = torch.unique(self.phenotypes_tensor, return_counts=True)
+        self.class_weights = torch.tensor(1.0 / counts, dtype=torch.float)
 
     def save(self, out_path):
-        self.genomes.save(out_path)
+        torch.save(self.genotypes_tensor, os.path.join(out_path, 'genotypes.pt'))
+        torch.save(self.phenotypes_tensor, os.path.join(out_path, 'phenotypes.pt'))
 
     def to_device(self, device):
         self.genotypes_tensor = self.genotypes_tensor.to(device)
         self.phenotypes_tensor = self.phenotypes_tensor.to(device)
+        self.class_weights = self.class_weights.to(device)

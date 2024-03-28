@@ -6,4 +6,3 @@ class HairColorDataLoader(DataLoader):
         for genotype, phenotype in super(HairColorDataLoader, self).__iter__():
             genotype = genotype.unsqueeze(2)
             yield genotype, phenotype
-

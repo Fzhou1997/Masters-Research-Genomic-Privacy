@@ -16,16 +16,17 @@ if torch.cuda.is_available():
 elif torch.backends.mps.is_available():
     device = torch.device('mps')
 
+train_ratio = 0.8
+batch_size = 32
+input_size = 1
+hidden_size = 128
+num_layers = 2
+num_classes = 3
+learning_rate = 0.0001
+num_epochs = 32
+
 if __name__ == '__main__':
     mp.freeze_support()
-    train_ratio = 0.8
-    batch_size = 32
-    input_size = 1
-    hidden_size = 128
-    num_layers = 2
-    num_classes = 3
-    learning_rate = 0.0001
-    num_epochs = 32
 
     dataset = HairColorDataset(37)
     dataset.load('../data/genomes/hair_color')
