@@ -14,7 +14,7 @@ class HairColorDataLoader(DataLoader):
                  one_hot_labels=False):
         sampler = None
         if weighted_sampling:
-            sampler = WeightedRandomSampler(weights=dataset.get_label_weights(), num_samples=len(dataset), replacement=True)
+            sampler = WeightedRandomSampler(weights=dataset.get_class_weights(), num_samples=len(dataset), replacement=True)
         super(HairColorDataLoader, self).__init__(dataset, batch_size=batch_size, shuffle=shuffle, sampler=sampler)
         self.dataset = dataset
         self.one_hot_data = one_hot_data
