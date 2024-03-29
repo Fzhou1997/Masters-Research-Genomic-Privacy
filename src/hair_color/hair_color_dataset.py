@@ -49,11 +49,6 @@ def _preprocess_genotypes_format_parallel(data_path, out_path, res_path, user_id
         pool.join()
 
 
-def _preprocess_genotypes_format(data_path, out_path, res_path, user_ids, build, chromosomes):
-    for user_id in user_ids:
-        _preprocess_genotype_format(data_path, out_path, res_path, user_id, build, chromosomes)
-
-
 # endregion </genotype format>
 
 
