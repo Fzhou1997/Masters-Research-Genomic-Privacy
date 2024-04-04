@@ -2,9 +2,12 @@ import itertools
 import logging
 import os
 import warnings
+from typing import Self
 
 import pandas as pd
 from snps import SNPs
+
+from genomes import Genotypes
 
 RSIDS_INVALID = r'[^0-9a-z]+'
 CHROMOSOMES_AUTOSOMAL = set(str(i) for i in range(1, 23))
@@ -22,7 +25,11 @@ class Genotype:
         self.build = None
         self.genotype = None
 
-    def from_user_id(self, data_path, res_path, user_id, build):
+    def from_user_id(self,
+                     data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+                     res_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+                     user_id: int,
+                     build: int) -> Self:
         user_file_names = [file_name for file_name in os.listdir(data_path)
                            if file_name.startswith(f'user{user_id}_')
                            and file_name.endswith('.txt')
@@ -47,8 +54,9 @@ class Genotype:
         self.user_id = user_id
         self.build = build
         self.genotype = snps.snps
+        return self
 
-    def clean(self):
+    def clean(self) -> Self:
         self.genotype['genotype'] = self.genotype['genotype'].str.upper()
         self.genotype['genotype'] = self.genotype['genotype'].str.replace(ALLELES_INVALID, '', regex=True)
         self.genotype['genotype'] = self.genotype['genotype'].str.replace(ALLELES_NA, '--', regex=True)
@@ -59,13 +67,14 @@ class Genotype:
         self.genotype.index = self.genotype.index.str.replace(RSIDS_INVALID, '', regex=True)
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
+        return self
 
     def filter_chromosomes_autosomal(self):
         self.genotype = self.genotype[self.genotype['chrom'].isin(CHROMOSOMES_AUTOSOMAL)]
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
 
-    def filter_chromosomes(self, chromosomes):
+    def filter_chromosomes(self, chromosomes: list[str]) -> None:
         self.genotype = self.genotype[self.genotype['chrom'].isin(chromosomes)]
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
@@ -75,45 +84,45 @@ class Genotype:
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
 
-    def filter_rsids(self, rsids):
+    def filter_rsids(self, rsids: list[str]) -> None:
         self.genotype = self.genotype.loc[self.genotype.index.isin(rsids)]
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
         return len(self.genotype.index) > 0
 
-    def is_imputed(self):
+    def is_imputed(self) -> bool:
         return '--' not in self.genotype['genotype'].values
 
     def is_alternate_allele_count_encoded(self):
         return self.genotype['genotype'].isin(range(3)).all()
 
-    def get_user_id(self):
+    def get_user_id(self) -> int:
         return self.user_id
 
-    def get_build(self):
+    def get_build(self) -> int:
         return self.build
 
-    def get_rsids(self):
+    def get_rsids(self) -> pd.DataFrame:
         return self.genotype[['chrom', 'pos']]
 
-    def get_genotype(self):
+    def get_genotype(self) -> pd.DataFrame:
         return self.genotype[['genotype']]
 
-    def get_one_hot(self):
+    def get_one_hot(self) -> pd.DataFrame:
         one_hot = self.genotype.loc[:, []]
         for genotype in GENOTYPES:
             one_hot[genotype] = (self.genotype['genotype'] == genotype).astype(int)
         return one_hot
 
-    def get_allele_counts(self):
+    def get_allele_counts(self) -> pd.DataFrame:
         allele_counts = self.genotype.loc[:, []]
         for allele in ALLELES:
             allele_counts[allele] = self.genotype['genotype'].apply(lambda genotype: genotype.count(allele))
         return allele_counts
 
-    def impute_bayesian(self, genotypes):
+    def impute_bayesian(self, genotypes: Genotypes) -> None:
         target_rsids = self.genotype[self.genotype['genotype'] == '--'].index
         genotype_counts = genotypes.get_genotype_counts()
         genotype_counts = genotype_counts.drop(columns=['--'])
@@ -129,20 +138,24 @@ class Genotype:
             else:
                 self.genotype.at[rsid, 'genotype'] = self.genotype.at[rsid, 'genotype'].count(reference_allele)
 
-    def save(self, out_path):
+    def save(self, out_path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
         out = self.genotype.reset_index()
         os.makedirs(out_path, exist_ok=True)
         out.to_csv(os.path.join(out_path, f'user{self.user_id}_build{self.build}.csv'), index=False)
 
-    def load(self, data_path, user_id, build):
+    def load(self,
+             data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+             user_id: int,
+             build: int) -> Self:
         file_path = os.path.join(data_path, f'user{user_id}_build{build}.csv')
         self.user_id = user_id
         self.build = build
         self.genotype = pd.read_csv(file_path, index_col=0)
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
+        return self
 
-    def remove(self, data_path):
+    def remove(self, data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
         file_path = os.path.join(data_path, f'user{self.user_id}_build{self.build}.csv')
         if os.path.exists(file_path):
             os.remove(file_path)

@@ -1,62 +1,60 @@
 import os.path
+from collections import Counter
+from os import PathLike
 
 import pandas as pd
 
+from genomes import Genotype
+
 
 class Rsids:
-    def __init__(self, build):
+    def __init__(self, build: int):
         self.build = build
         self.num_genotypes = 0
-        self.rsids = pd.DataFrame()
+        self.rsid_counts = Counter()
+        self.rsid_map = {}
 
-    def concat_genotype(self, genotype):
+    def concat_genotype(self, genotype: Genotype) -> None:
         if genotype.get_build() != self.build:
             raise ValueError('Reference genome build mismatch')
         self.num_genotypes += 1
         rsids = genotype.get_rsids()
-        rsids['count'] = 1
-        self.rsids = pd.concat([self.rsids, rsids], ignore_index=False)
-        self.rsids = self.rsids.groupby(['rsid', 'chrom', 'pos']).sum().reset_index()
-        self.rsids = self.rsids.set_index('rsid')
+        self.rsid_counts.update(rsids.index)
+        self.rsid_map.update(rsids.to_dict(orient='index'))
 
-    def concat_genotypes(self, genotypes):
+    def concat_genotypes(self, genotypes: list[Genotype]) -> None:
         for genotype in genotypes:
-            if genotype.get_build() != self.build:
-                raise ValueError('Reference genome build mismatch')
-            self.num_genotypes += 1
-            rsids = genotype.get_rsids()
-            rsids['count'] = 1
-            self.rsids = pd.concat([self.rsids, rsids], ignore_index=False)
-        self.rsids = self.rsids.groupby(['rsid', 'chrom', 'pos']).sum().reset_index()
-        self.rsids = self.rsids.set_index('rsid')
+            self.concat_genotype(genotype)
 
-    def get_build(self):
+    def get_build(self) -> int:
         return self.build
 
-    def get_num_genotypes(self):
+    def get_num_genotypes(self) -> int:
         return self.num_genotypes
 
-    def get_rsid_counts(self):
-        return self.rsids[['count']]
+    def get_rsid_counts(self) -> Counter[str]:
+        return self.rsid_counts
 
-    def get_rsid_map(self):
-        return self.rsids[['chrom', 'pos']]
+    def get_rsid_map(self) -> dict[str, dict[str, int]]:
+        return self.rsid_map
 
     def get_rsid_probabilities(self):
-        return self.rsids[['count']] / self.num_genotypes
+        return {
+            rsid: count / self.num_genotypes
+            for rsid, count in self.rsid_counts.items()
+        }
 
     def get_common_rsids(self):
-        return self.rsids[self.rsids['count'] == self.num_genotypes].index
+        return {
+            rsid
+            for rsid, count in self.rsid_counts.items()
+            if count == self.num_genotypes
+        }
 
-    def sort_rsids(self):
-        self.rsids = self.rsids.sort_values(by=['chrom', 'pos'], ascending=[True, True])
-
-    def save(self, out_path):
-        out = self.rsids.reset_index()
+    def save(self, out_path: str | bytes | PathLike[str] | PathLike[bytes]):
         os.makedirs(out_path, exist_ok=True)
-        out.to_csv(os.path.join(out_path, f'build_{self.build}_count_{self.num_genotypes}_rsids.csv'), index=False)
 
-    def load(self, data_path):
+    def load(self, data_path: str | bytes | PathLike[str] | PathLike[bytes]):
         for file_name in os.listdir(data_path):
             if file_name.startswith('build_') and file_name.endswith('_rsids.csv'):
                 self.build = int(file_name.split('_')[1])

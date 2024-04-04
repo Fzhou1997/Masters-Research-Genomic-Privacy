@@ -2,9 +2,10 @@ import os
 import multiprocessing as mp
 
 from enum import IntEnum
+from typing import Self
 
 import torch
-from torch import Tensor
+from torch import Tensor, device
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
@@ -286,7 +287,6 @@ def _preprocess_genomes_format(genotype_out_path, genomes_out_path, phenotypes, 
             continue
     genomes.concat_phenotypes(phenotypes)
     genomes.filter_phenotypes_genotypes()
-    rsids.sort_rsids()
     common_rsids = list(rsids.get_common_rsids())
     genomes.sort_rsids(common_rsids)
     genomes.save(genomes_out_path)
@@ -310,69 +310,63 @@ class PreprocessingStage(IntEnum):
 class HairColorDataset(Dataset):
     def __init__(self):
         self.data = None
+        self.data_length = None
+        self.data_classes = None
+        self.num_data_classes = None
+        self.data_class_counts = None
+        self.data_class_weights = None
         self.labels = None
-        self.length = None
-        self.classes = None
-        self.num_classes = None
-        self.class_counts = None
-        self.class_weights = None
+        self.label_length = None
+        self.label_classes = None
+        self.num_label_classes = None
+        self.label_class_counts = None
+        self.label_class_weights = None
 
     def __len__(self):
-        return self.length
+        return self.data_length
 
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
 
     def _set_data(self, data: Tensor) -> None:
         self.data = data
-        self.length = self.data.size(0)
+        self.data_length = self.data.size(0)
+        self.data_classes, self.data_class_counts = torch.unique(self.data, return_counts=True)
+        self.num_data_classes = self.data_classes.size(0)
+        self.data_class_weights = 1.0 / self.data_class_counts
 
     def _set_labels(self, labels: Tensor) -> None:
         self.labels = labels
-        self.length = self.labels.size(0)
-        self.classes, self.class_counts = torch.unique(self.labels, return_counts=True)
-        self.num_classes = self.classes.size(0)
-        self.class_weights = 1.0 / self.class_counts
+        self.label_length = self.labels.size(0)
+        self.label_classes, self.label_class_counts = torch.unique(self.labels, return_counts=True)
+        self.num_label_classes = self.label_classes.size(0)
+        self.label_class_weights = 1.0 / self.label_class_counts
 
-    def get_classes(self):
-        return self.classes
+    def get_data_classes(self) -> Tensor:
+        return self.data_classes
 
-    def get_num_classes(self):
-        return self.num_classes
+    def get_num_data_classes(self) -> int:
+        return self.num_data_classes
 
-    def get_class_counts(self):
-        return self.class_counts
+    def get_data_class_counts(self) -> Tensor:
+        return self.data_class_counts
 
-    def get_class_weights(self):
-        return self.class_weights
+    def get_data_class_weights(self) -> Tensor:
+        return self.data_class_weights
 
-    def preprocess(self, in_path, out_path, res_path, build, chromosomes, stage=PreprocessingStage.ALL):
-        phenotype_in_path = os.path.join(in_path, '/phenotypes/')
-        genotype_in_path = os.path.join(in_path, '/genotypes/')
-        phenotype_out_path = os.path.join(out_path, '/phenotypes/')
-        genotype_out_path = os.path.join(out_path, '/genotypes/')
-        genomes_out_path = os.path.join(out_path, '/genomes/')
-        if stage <= PreprocessingStage.PHENOTYPES_FORMAT:
-            phenotypes = _preprocess_phenotypes(phenotype_in_path, phenotype_out_path)
-        else:
-            phenotypes = Phenotype()
-            phenotypes.load(phenotype_out_path, "hair_color")
-        if stage <= PreprocessingStage.GENOTYPE_FORMAT:
-            _preprocess_genotypes_format_parallel(genotype_in_path, genotype_out_path, res_path, phenotypes, build, chromosomes)
-        if stage <= PreprocessingStage.GENOTYPE_IMPUTE:
-            _preprocess_genotypes_impute_parallel(genomes_out_path, genotype_out_path, phenotypes, build)
-        if stage <= PreprocessingStage.GENOTYPE_FILTER:
-            rsids = _preprocess_genotypes_filter(genomes_out_path, genotype_out_path, phenotypes, build)
-        else:
-            rsids = Rsids(build)
-            rsids.load(genomes_out_path)
-        if stage <= PreprocessingStage.GENOTYPE_ENCODE:
-            _preprocess_genotypes_encode_parallel(genomes_out_path, genotype_out_path, phenotypes, build)
-        genomes = _preprocess_genomes_format(genotype_out_path, genomes_out_path, phenotypes, phenotypes, rsids, build)
-        self._set_data(genomes.get_genotypes_tensor().int())
-        self._set_labels(genomes.get_phenotypes_tensor().int())
+    def get_label_classes(self) -> Tensor:
+        return self.label_classes
 
-    def split_train_test(self, train_ratio=0.8):
+    def get_num_label_classes(self) -> int:
+        return self.num_label_classes
+
+    def get_label_class_counts(self) -> Tensor:
+        return self.label_class_counts
+
+    def get_label_class_weights(self) -> Tensor:
+        return self.label_class_weights
+
+    def split_train_test(self, train_ratio=0.8) -> tuple[Self, Self]:
         train_set = HairColorDataset()
         test_set = HairColorDataset()
         train_data, train_labels, test_data, test_labels = stratified_random_split(self.data, self.labels, train_ratio)
@@ -382,15 +376,38 @@ class HairColorDataset(Dataset):
         test_set._set_labels(test_labels)
         return train_set, test_set
 
-    def load(self, path):
+    def preprocess(self,
+                   in_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+                   out_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+                   res_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+                   build: int,
+                   chromosomes: list[str]) -> None:
+        phenotype_in_path = os.path.join(in_path, '/phenotypes/')
+        genotype_in_path = os.path.join(in_path, '/genotypes/')
+        phenotype_out_path = os.path.join(out_path, '/phenotypes/')
+        genotype_out_path = os.path.join(out_path, '/genotypes/')
+        genomes_out_path = os.path.join(out_path, '/genomes/')
+        phenotypes = _preprocess_phenotypes(phenotype_in_path, phenotype_out_path)
+        _preprocess_genotypes_format_parallel(genotype_in_path, genotype_out_path, res_path, phenotypes, build, chromosomes)
+        _preprocess_genotypes_impute_parallel(genomes_out_path, genotype_out_path, phenotypes, build)
+        rsids = _preprocess_genotypes_filter(genomes_out_path, genotype_out_path, phenotypes, build)
+        _preprocess_genotypes_encode_parallel(genomes_out_path, genotype_out_path, phenotypes, build)
+        genomes = _preprocess_genomes_format(genotype_out_path, genomes_out_path, phenotypes, phenotypes, rsids, build)
+        self.from_genomes(genomes)
+
+    def from_genomes(self, genomes: Genomes) -> None:
+        self._set_data(genomes.get_genotypes_tensor().int())
+        self._set_labels(genomes.get_phenotypes_tensor().int())
+
+    def load(self, path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
         self._set_data(torch.load(os.path.join(path, 'genotypes.pt')))
         self._set_labels(torch.load(os.path.join(path, 'phenotypes.pt')))
 
-    def save(self, path):
+    def save(self, path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
         os.makedirs(path, exist_ok=True)
         torch.save(self.data, os.path.join(path, 'genotypes.pt'))
         torch.save(self.labels, os.path.join(path, 'phenotypes.pt'))
 
-    def to_device(self, device):
+    def to_device(self, device: device) -> None:
         self.data = self.data.to(device)
         self.labels = self.labels.to(device)

@@ -1,7 +1,10 @@
 import itertools
 import os
+from collections import Counter
 
 import pandas as pd
+
+from genomes import Genotype
 
 ALLELES = 'ACGTDI-'
 GENOTYPES = [''.join(item) for item in itertools.product('ACGT', repeat=2)] + [''.join(item) for item in itertools.product('DI', repeat=2)] + ['--']
@@ -12,12 +15,13 @@ for genotype in GENOTYPES:
 
 
 class Genotypes:
-    def __init__(self, build):
+    def __init__(self, build: int):
         self.build = build
         self.num_genotypes = 0
         self.genotypes = pd.DataFrame()
+        self.genotype_counts = {}
 
-    def concat_genotype(self, genotype):
+    def concat_genotype(self, genotype: Genotype) -> None:
         if genotype.get_build() != self.build:
             raise ValueError('Reference genome build mismatch')
         self.num_genotypes += 1
@@ -25,7 +29,7 @@ class Genotypes:
         self.genotypes = pd.concat([self.genotypes, one_hot], ignore_index=False)
         self.genotypes = self.genotypes.groupby(level='rsid').sum()
 
-    def concat_genotypes(self, genotypes):
+    def concat_genotypes(self, genotypes: list[Genotype]) -> None:
         for genotype in genotypes:
             if genotype.get_build() != self.build:
                 raise ValueError('Reference genome build mismatch')
@@ -34,14 +38,14 @@ class Genotypes:
             self.genotypes = pd.concat([self.genotypes, one_hot], ignore_index=False)
         self.genotypes = self.genotypes.groupby(level='rsid').sum()
 
-    def get_build(self):
+    def get_build(self) -> int:
         return self.build
 
-    def get_num_genotypes(self):
+    def get_num_genotypes(self) -> int:
         return self.num_genotypes
 
-    def get_genotype_counts(self):
-        return self.genotypes
+    def get_genotype_counts(self) -> dict[str, Counter[str]]:
+        return self.genotype_counts
 
     def get_genotype_probabilities(self):
         return self.genotypes.div(self.genotypes.sum(axis=1), axis=0)
