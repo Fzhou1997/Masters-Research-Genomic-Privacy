@@ -25,6 +25,15 @@ class Genotype:
         self.build = None
         self.genotype = None
 
+    def __iter__(self):
+        pass
+
+    def __next__(self):
+        pass
+
+    def __getitem__(self, item):
+        pass
+
     def from_user_id(self,
                      data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
                      res_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],

@@ -23,7 +23,5 @@ class Summary:
                 self.genotype_counts[rsid] = Counter()
             self.genotype_counts[rsid].update(genotype)
 
-    def concat_genotypes(self, genotypes: list[Genotype]) -> None:
-        for genotype in genotypes:
-            self.concat_genotype(genotype)
+    
 
