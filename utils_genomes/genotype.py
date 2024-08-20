@@ -1,5 +1,5 @@
 import itertools
-import logging
+import json
 import os
 import warnings
 from typing import Self
@@ -7,7 +7,7 @@ from typing import Self
 import pandas as pd
 from snps import SNPs
 
-from genomes import Genotypes
+warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
 
 RSIDS_INVALID = r'[^0-9a-z]+'
 CHROMOSOMES_AUTOSOMAL = set(str(i) for i in range(1, 23))
@@ -18,7 +18,6 @@ ALLELES_NA = r'.*[-0]+.*'
 GENOTYPES = [''.join(item) for item in itertools.product('ACGT', repeat=2)] + [''.join(item) for item in itertools.product('DI', repeat=2)] + ['--']
 
 
-
 class Genotype:
     def __init__(self):
         self.user_id = None
@@ -26,13 +25,27 @@ class Genotype:
         self.genotype = None
 
     def __iter__(self):
-        pass
+        return GenotypeIterator(self)
 
-    def __next__(self):
-        pass
+    def __getitem__(self, idx: str) -> str | None:
+        if idx not in self.genotype.index:
+            return None
+        else:
+            return self.genotype.at[idx, 'genotype']
 
-    def __getitem__(self, item):
-        pass
+    def _to_dict(self) -> dict[str, int | dict[str, str | int]]:
+        return {
+            'user_id': self.user_id,
+            'build': self.build,
+            'genotype': self.genotype.to_dict(orient='index'),
+        }
+
+    def _from_dict(self, data: dict[str, int | dict[str, str | int]]) -> Self:
+        self.user_id = data['user_id']
+        self.build = data['build']
+        self.genotype = pd.DataFrame.from_dict(data['genotype'], orient='index')
+        self.genotype.index.name = 'rsid'
+        return self
 
     def from_user_id(self,
                      data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
@@ -50,7 +63,7 @@ class Genotype:
             file_path = os.path.join(data_path, file_name)
             try:
                 s = SNPs(file_path, resources_dir=res_path)
-            except Exception as e:
+            except Exception:
                 continue
             if not s.valid or not s.build_detected or s.build != build:
                 continue
@@ -74,8 +87,14 @@ class Genotype:
         self.genotype['chrom'] = self.genotype['chrom'].str.replace(CHROMOSOMES_INVALID, '', regex=True)
         self.genotype.index = self.genotype.index.str.lower()
         self.genotype.index = self.genotype.index.str.replace(RSIDS_INVALID, '', regex=True)
+        unique_rsids = ~self.genotype.index.duplicated(keep='first')
+        self.genotype = self.genotype[unique_rsids]
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
+        return self
+
+    def drop_rsid_map(self) -> Self:
+        self.genotype = self.genotype.drop(columns=['chrom', 'pos'])
         return self
 
     def filter_chromosomes_autosomal(self):
@@ -93,7 +112,7 @@ class Genotype:
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
 
-    def filter_rsids(self, rsids: list[str]) -> None:
+    def filter_rsids(self, rsids: set[str]) -> None:
         self.genotype = self.genotype.loc[self.genotype.index.isin(rsids)]
         if len(self.genotype.index) == 0:
             raise ValueError('No valid rsids found')
@@ -131,40 +150,39 @@ class Genotype:
             allele_counts[allele] = self.genotype['genotype'].apply(lambda genotype: genotype.count(allele))
         return allele_counts
 
-    def impute_bayesian(self, genotypes: Genotypes) -> None:
+    def impute_bayesian(self, mode_genotypes: dict[str, str | int]) -> None:
         target_rsids = self.genotype[self.genotype['genotype'] == '--'].index
-        genotype_counts = genotypes.get_genotype_counts()
-        genotype_counts = genotype_counts.drop(columns=['--'])
-        genotype_modes = genotype_counts.idxmax(axis=1)
         for rsid in target_rsids:
-            self.genotype.at[rsid, 'genotype'] = genotype_modes[rsid]
+            self.genotype.at[rsid, 'genotype'] = mode_genotypes[rsid]
 
-    def encode_alternate_allele_count(self, reference_alleles):
+    def encode_alternate_allele_count(self, reference_alleles: dict[str, str]) -> None:
         for rsid in self.genotype.index:
             reference_allele = reference_alleles[rsid]
             if self.genotype.at[rsid, 'genotype'] == '--':
                 self.genotype.at[rsid, 'genotype'] = -1
             else:
-                self.genotype.at[rsid, 'genotype'] = self.genotype.at[rsid, 'genotype'].count(reference_allele)
+                self.genotype.at[rsid, 'genotype'] = 2 - self.genotype.at[rsid, 'genotype'].count(reference_allele)
 
-    def save(self, out_path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
-        out = self.genotype.reset_index()
+    def save(self, out_path: str | bytes | os.PathLike[str] | os.PathLike[bytes], file_name: str) -> None:
         os.makedirs(out_path, exist_ok=True)
-        out.to_csv(os.path.join(out_path, f'user{self.user_id}_build{self.build}.csv'), index=False)
+        with open(f'{out_path}/{file_name}.json', 'w') as file:
+            json.dump(self._to_dict(), file)
 
-    def load(self,
-             data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
-             user_id: int,
-             build: int) -> Self:
-        file_path = os.path.join(data_path, f'user{user_id}_build{build}.csv')
-        self.user_id = user_id
-        self.build = build
-        self.genotype = pd.read_csv(file_path, index_col=0)
-        if len(self.genotype.index) == 0:
-            raise ValueError('No valid rsids found')
-        return self
+    def load(self, in_path: str | bytes | os.PathLike[str] | os.PathLike[bytes], file_name: str) -> Self:
+        with open(f'{in_path}/{file_name}.json', 'r') as file:
+            return self._from_dict(json.load(file))
 
     def remove(self, data_path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> None:
         file_path = os.path.join(data_path, f'user{self.user_id}_build{self.build}.csv')
         if os.path.exists(file_path):
             os.remove(file_path)
+
+
+class GenotypeIterator:
+    def __init__(self, genotype: Genotype):
+        self.genotype = genotype
+        self.iter = genotype.genotype.iterrows()
+
+    def __next__(self):
+        index, row = next(self.iter)
+        return index, row['genotype']

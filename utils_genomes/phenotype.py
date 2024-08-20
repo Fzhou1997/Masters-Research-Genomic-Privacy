@@ -1,5 +1,7 @@
-import os
+import json
+from os import PathLike, makedirs, listdir
 import re
+from typing import Self
 
 import pandas as pd
 
@@ -81,54 +83,92 @@ class Phenotype:
         self.feature = ''
         self.phenotypes = None
 
-    def from_feature(self, data_path, feature):
-        file_path = ''
-        for file_name in os.listdir(data_path):
-            match = re.match(r'phenotypes_(.+)\.csv', file_name)
-            if match:
-                file_path = os.path.join(data_path, file_name)
-                break
-        if not file_path:
-            raise FileNotFoundError('No valid phenotypes file found')
+    def __iter__(self):
+        return PhenotypeIterator(self)
+
+    def __getitem__(self, idx: int) -> str | int | None:
+        if idx not in self.phenotypes.index:
+            return None
+        else:
+            return self.phenotypes.at[idx, self.feature]
+
+    def _to_dict(self) -> dict[str, str | dict[int, dict[str, str]]]:
+        return {
+            'feature': self.feature,
+            'phenotypes': self.phenotypes.to_dict(orient='index'),
+        }
+
+    def _from_dict(self, data: dict[str, str | dict[int, dict[str, str]]]) -> Self:
+        self.feature = data['feature']
+        self.phenotypes = pd.DataFrame.from_dict(data['phenotypes'], orient='index')
+        self.phenotypes.index.name = 'user_id'
+        return self
+
+    def from_feature(self, in_path: str | bytes | PathLike[str] | PathLike[bytes], feature: str) -> Self:
+        file_path = None
+        for file_name in listdir(in_path):
+            if file_name.startswith(f'phenotypes_') and file_name.endswith('.csv'):
+                file_path = f"{in_path}/{file_name}"
+        if file_path is None:
+            raise FileNotFoundError('No phenotype files found')
         self.feature = re.sub(r'\s+', '_', re.sub(r'[^a-zA-Z0-9_\s]+', ' ', feature.strip().lower()))
         self.phenotypes = pd.read_csv(file_path, delimiter=';', index_col=0)
+        self.phenotypes.index.name = 'user_id'
         self.phenotypes.columns = self.phenotypes.columns.str.replace(r'[^a-zA-Z0-9_\s]+', ' ', regex=True).str.strip().str.lower().str.replace(r'\s+', '_', regex=True)
         self.phenotypes = self.phenotypes[self.feature]
+        self.phenotypes = self.phenotypes.iloc[:, [0]]
+        return self
 
-    def clean(self):
+    def clean(self) -> Self:
         self.phenotypes = self.phenotypes.groupby(self.phenotypes.index).last()
         self.phenotypes = self.phenotypes.sort_index()
         self.phenotypes = self.phenotypes.dropna()
+        self.phenotypes = self.phenotypes[~self.phenotypes.index.duplicated(keep='first')]
+        self.phenotypes.index = self.phenotypes.index.astype(int)
+        self.phenotypes[self.feature] = self.phenotypes[self.feature].astype(str)
+        self.phenotypes[self.feature] = self.phenotypes[self.feature].str.lower()
         if self.phenotypes.empty:
             raise ValueError('No valid phenotypes found')
+        return self
 
-    def encode(self, encoder):
-        self.phenotypes[self.feature] = self.phenotypes[self.feature].map(encoder)
+    def encode(self, encoder: dict[str, str | int]) -> Self:
+        self.phenotypes[self.feature] = self.phenotypes[self.feature].map(encoder, na_action='ignore')
         self.phenotypes = self.phenotypes.dropna()
         if self.phenotypes.empty:
             raise ValueError('No valid phenotypes found')
+        return self
 
-    def get_feature(self):
+    def get_feature(self) -> str:
         return self.feature
 
-    def get_phenotypes(self):
+    def get_phenotypes(self) -> pd.DataFrame:
         return self.phenotypes
 
-    def get_user_ids(self):
-        return self.phenotypes.index
+    def get_user_ids(self) -> list[int]:
+        return list(self.phenotypes.index)
 
-    def get_values(self):
+    def get_values(self) -> list[str] | list[int]:
         return list(self.phenotypes[self.feature].unique())
 
-    def get_one_hot(self):
+    def get_one_hot(self) -> pd.DataFrame:
         return pd.get_dummies(self.phenotypes[self.feature], prefix=self.feature)
 
-    def save(self, out_path):
-        out = self.phenotypes.reset_index()
-        os.makedirs(out_path, exist_ok=True)
-        out.to_csv(os.path.join(out_path, f'phenotype_{self.feature}.csv'), index=False)
+    def save(self, out_path: str | bytes | PathLike[str] | PathLike[bytes], file_name: str) -> None:
+        makedirs(out_path, exist_ok=True)
+        with open(f'{out_path}/{file_name}.json', 'w') as file:
+            json.dump(self._to_dict(), file)
 
-    def load(self, data_path, feature_name):
-        file_path = os.path.join(data_path, f'phenotype_{feature_name}.csv')
-        self.feature = feature_name
-        self.phenotypes = pd.read_csv(file_path, index_col=0)
+    def load(self, in_path: str | bytes | PathLike[str] | PathLike[bytes], file_name):
+        with open(f'{in_path}/{file_name}.json', 'r') as file:
+            return self._from_dict(json.load(file))
+
+
+class PhenotypeIterator:
+    def __init__(self, phenotype: Phenotype):
+        self.phenotype = phenotype
+        self.feature = phenotype.get_feature()
+        self.iter = phenotype.phenotypes.iterrows()
+
+    def __next__(self) -> tuple[int, str]:
+        user_id, row = next(self.iter)
+        return user_id, row[self.feature]
