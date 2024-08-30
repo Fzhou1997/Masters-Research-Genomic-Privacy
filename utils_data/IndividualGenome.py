@@ -34,13 +34,13 @@ class IndividualGenome:
         self.snps.index = self.snps.index.str.lower()
         self.snps.index = self.snps.index.str.replace(RSIDS_INVALID, '', regex=True)
         self.snps = self.snps[~self.snps.index.duplicated(keep='first')]
-        self.snps = self.snps[self.snps.index.str.startswith('rs')]
+        self.snps = self.snps[self.snps.index.str.match(r'^rs\d+$')]
         self.count = len(self.snps)
         self.chromosomes = sorted(self.snps['chrom'].unique().tolist())
         return self
 
     def get_snps(self) -> set[int]:
-        return set(self.snps.index.str.replace('rs', '').astype(int).tolist())
+        return set(self.snps.index.str.replace('rs', '').map(int).tolist())
 
     def save(self,
              file_path: str | bytes | PathLike[str] | PathLike[bytes]):
