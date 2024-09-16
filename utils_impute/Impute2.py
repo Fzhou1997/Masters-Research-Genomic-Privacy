@@ -70,4 +70,4 @@ class Impute2:
                no_warn: bool = False,
                fill_holes: bool = False,
                no_remove: bool = False):
-
+        pass
