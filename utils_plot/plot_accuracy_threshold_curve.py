@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 
+
 def plot_accuracy_threshold_curve(
         thresholds: list[float] | npt.NDArray[np.float64],
         accuracies: list[float] | npt.NDArray[np.float64],
