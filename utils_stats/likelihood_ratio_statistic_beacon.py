@@ -198,7 +198,7 @@ def likelihood_ratio_statistic_beacon(
     return null - alternative
 
 
-def likelihood_ratio_statistic_beacon_linearized(
+def likelihood_ratio_statistic_beacon_linearized_bac(
         beacon_responses: npt.NDArray[np.bool_],
         probability_absent: float,
         probability_unique: float,
@@ -236,3 +236,78 @@ def likelihood_ratio_statistic_beacon_linearized(
                  / (probability_absent * (1 - probability_mismatch * probability_unique))
                  + epsilon)
     return n * b + c * np.sum(beacon_responses)
+
+
+def likelihodd_ratio_statistic_beacon_linearized(
+        target_genomes: npt.NDArray[np.bool_],
+        beacon_responses: npt.NDArray[np.bool_],
+        alpha_0: float,
+        beta_0: float,
+        probability_mismatch: float,
+        num_beacon_genomes: int,
+        epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
+    assert beacon_responses.ndim == 1, \
+        "The beacon responses must be a 1D array."
+    assert target_genomes.ndim == 1 or target_genomes.ndim == 2, \
+        "The target genomes must be a 1D or 2D array."
+    if target_genomes.ndim == 1:
+        assert target_genomes.shape[0] == beacon_responses.shape[0], \
+            "The number of target genomes must be the same as the number of beacon responses."
+    else:
+        assert target_genomes.shape[1] == beacon_responses.shape[0], \
+            "The number of target genomes must be the same as the number of beacon responses."
+    assert 0 <= probability_mismatch <= 1, \
+        "The mismatch probability must be between 0 and 1."
+    numerator = sp.gamma(alpha_0 + beta_0)
+    probability_absent =
+
+def likelihood_ratio_statistic_beacon_optimized(
+        target_genomes: npt.NDArray[np.bool_],
+        beacon_responses: npt.NDArray[np.bool_],
+        allele_frequencies: npt.NDArray[np.float64],
+        probability_mismatch: float,
+        num_beacon_genomes: int,
+        epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
+    """
+    Calculate the optimized membership likelihood ratio statistics for a set of beacon responses,
+    given the target genomes, allele frequencies, and mismatch probability.
+
+    Args:
+        target_genomes (npt.NDArray[np.bool_]): An array of boolean values representing the target genomes.
+        beacon_responses (npt.NDArray[np.bool_]): An array of boolean values representing the beacon responses.
+        allele_frequencies (npt.NDArray[np.float64]): An array of float values representing the allele frequencies.
+        probability_mismatch (float): The mismatch probability.
+        num_beacon_genomes (int): The number of genomes in the beacon.
+        epsilon (float, optional): A small value to avoid taking the log of zero. Defaults to 1e-8.
+
+    Returns:
+        float | npt.NDArray[np.float64]: The optimized likelihood ratio statistic of the responses.
+
+    Raises:
+        AssertionError: If the dimensions of the input arrays do not match the expected shapes.
+        AssertionError: If the probability of mismatch is not between 0 and 1.
+    """
+    assert beacon_responses.ndim == 1, \
+        "The beacon responses must be a 1D array."
+    assert allele_frequencies.ndim == 1, \
+        "The allele frequencies must be a 1D array."
+    assert target_genomes.ndim == 1 or target_genomes.ndim == 2, \
+        "The target genomes must be a 1D or 2D array."
+    assert beacon_responses.shape == allele_frequencies.shape, \
+        "The beacon responses and allele frequencies must have the same shape."
+    if target_genomes.ndim == 1:
+        assert target_genomes.shape[0] == allele_frequencies.shape[0], \
+            "The number of target genomes must be the same as the number of allele frequencies."
+    else:
+        assert target_genomes.shape[1] == allele_frequencies.shape[0], \
+            "The number of target genomes must be the same as the number of allele frequencies."
+    assert 0 <= probability_mismatch <= 1, \
+        "The mismatch probability must be between 0 and 1."
+    allele_frequencies = np.clip(allele_frequencies, epsilon, 1 - epsilon)
+    squared_allele_frequencies_complement = np.power(1 - allele_frequencies, 2)
+    probabilities_unique = np.power(1 - allele_frequencies, 2 * num_beacon_genomes - 2)
+    probabilities_absent = np.power(1 - allele_frequencies, 2 * num_beacon_genomes)
+    log_likelihoods_null = np.log(squared_allele_frequencies_complement / probability_mismatch)
+    log_likelihoods_alternative = np.log((probability_mismatch / squared_allele_frequencies_complement)
+        * ((1 - probabilities_absent) / (1 - probability_mismatch * probabilities_unique)))
+    return np.sum(target_genomes * (log_likelihoods_null + log_likelihoods_alternative * beacon_responses), axis=1)
