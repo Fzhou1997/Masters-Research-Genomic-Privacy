@@ -2,18 +2,18 @@ import numpy as np
 import numpy.typing as npt
 
 
-def likelihood_ratio_statistic_frequency_diploid(
+def likelihood_ratio_statistic_pool_diploid(
+        target_genomes: npt.NDArray[np.int64],
         pool_frequencies: npt.NDArray[np.float64],
         population_frequencies: npt.NDArray[np.float64],
-        target_genomes: npt.NDArray[np.int64],
         epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
     """
     Calculate the likelihood ratio statistic for diploid organisms based on alternate allele frequencies.
 
     Parameters:
+        target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
         pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
         population_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the population.
-        target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
     Returns:
@@ -52,18 +52,18 @@ def likelihood_ratio_statistic_frequency_diploid(
     return np.sum(homozygous_reference_term + heterozygous_term + homozygous_alternate_term, axis=1)
 
 
-def likelihood_ratio_statistic_frequency_haploid(
+def likelihood_ratio_statistic_pool_haploid(
+        target_genomes: npt.NDArray[np.bool_],
         pool_frequencies: npt.NDArray[np.float64],
         population_frequencies: npt.NDArray[np.float64],
-        target_genomes: npt.NDArray[np.bool_],
         epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
     """
     Calculate the likelihood ratio statistic for haploid organisms based on alternate allele frequencies.
 
     Parameters:
+        target_genomes (npt.NDArray[np.bool_]): Array representing the target genome with boolean values.
         pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
         population_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the population.
-        target_genomes (npt.NDArray[np.bool_]): Array representing the target genome with boolean values.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
     Returns:
@@ -98,18 +98,18 @@ def likelihood_ratio_statistic_frequency_haploid(
     return np.sum(alternate_term + reference_term, axis=1)
 
 
-def likelihood_ratio_statistic_frequency_diploid_approximate(
+def likelihood_ratio_statistic_pool_diploid_approximate(
+        target_genomes: npt.NDArray[np.int64],
         pool_frequencies: npt.NDArray[np.float64],
         reference_frequencies: npt.NDArray[np.float64],
-        target_genomes: npt.NDArray[np.int64],
         epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
     """
     Calculate the likelihood ratio statistic for diploid organisms based on alternate allele frequencies using an approximate method.
 
     Parameters:
+        target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
         pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
         reference_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the reference population.
-        target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
     Returns:
@@ -148,18 +148,18 @@ def likelihood_ratio_statistic_frequency_diploid_approximate(
     return np.sum(homozygous_reference_term + heterozygous_term + homozygous_alternate_term, axis=1)
 
 
-def likelihood_ratio_statistic_frequency_haploid_approximate(
+def likelihood_ratio_statistic_pool_haploid_approximate(
+        target_genomes: npt.NDArray[np.bool_],
         pool_frequencies: npt.NDArray[np.float64],
         reference_frequencies: npt.NDArray[np.float64],
-        target_genomes: npt.NDArray[np.bool_],
         epsilon: float = 1e-8) -> float | npt.NDArray[np.float64]:
     """
     Calculate the likelihood ratio statistic for haploid organisms based on alternate allele frequencies using an approximate method.
 
     Parameters:
+        target_genomes (npt.NDArray[np.bool_]): Array representing the target genomes with boolean values.
         pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
         reference_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the reference population.
-        target_genomes (npt.NDArray[np.bool_]): Array representing the target genomes with boolean values.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
     Returns:
@@ -187,8 +187,11 @@ def likelihood_ratio_statistic_frequency_haploid_approximate(
             'The first dimension of pool_frequencies must be the same as the second dimension of target_genomes.'
     pool_frequencies = np.clip(pool_frequencies, epsilon, 1 - epsilon)
     reference_frequencies = np.clip(reference_frequencies, epsilon, 1 - epsilon)
+
     alternate_frequency_ratios = pool_frequencies / reference_frequencies
     reference_frequency_ratios = (1 - pool_frequencies) / (1 - reference_frequencies)
+
     alternate_terms = target_genomes * np.log(alternate_frequency_ratios)
-    reference_terms = (1 - target_genomes) * np.log(reference_frequency_ratios)
-    return np.sum(alternate_terms + reference_terms, axis=1)
+    null_terms = (1 - target_genomes) * np.log(reference_frequency_ratios)
+
+    return np.sum(alternate_terms + null_terms, axis=1)
