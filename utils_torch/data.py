@@ -4,7 +4,10 @@ import torch
 from torch import Tensor
 
 
-def stratified_random_split(data: Tensor, labels: Tensor, train_ratio: float) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+def stratified_random_split(
+        data: Tensor,
+        labels: Tensor,
+        train_ratio: float) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
     classes = torch.unique(labels)
     train_indices = torch.empty(0, dtype=torch.long)
     test_indices = torch.empty(0, dtype=torch.long)
