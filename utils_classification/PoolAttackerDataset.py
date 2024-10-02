@@ -1,10 +1,11 @@
 import numpy as np
 import numpy.typing as npt
 import torch
-from torch.utils.data import Dataset
+
+from .LSTMAttackerDataset import LSTMAttackerDataset
 
 
-class PoolAttackerDataset(Dataset):
+class PoolAttackerDataset(LSTMAttackerDataset):
     """
     A custom Dataset class for Pool Attacker.
 
@@ -13,7 +14,7 @@ class PoolAttackerDataset(Dataset):
 
     Attributes:
         data (torch.Tensor): The concatenated data tensor containing target genomes, pool frequencies, and reference frequencies.
-        labels (torch.Tensor): The labels tensor.
+        targets (torch.Tensor): The targets tensor.
     """
 
     def __init__(self,
@@ -38,27 +39,4 @@ class PoolAttackerDataset(Dataset):
         pool_frequencies = np.broadcast_to(pool_frequencies, (num_genomes, num_snps))[..., np.newaxis]
         reference_frequencies = np.broadcast_to(reference_frequencies, (num_genomes, num_snps))[..., np.newaxis]
         data = np.concatenate((target_genomes, pool_frequencies, reference_frequencies), axis=2)
-        self.data = torch.tensor(data, dtype=dtype)
-        self.labels = torch.tensor(labels, dtype=dtype)
-
-    def __len__(self) -> int:
-        """
-        Return the number of samples in the dataset.
-
-        Returns:
-            int: The number of samples.
-        """
-        return len(self.data)
-
-    def __getitem__(self,
-                    item: int | slice | list[bool | int] | npt.NDArray[np.bool_ | np.int_]) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Retrieve a sample and its label from the dataset.
-
-        Args:
-            item (int | slice | list[bool | int] | npt.NDArray[np.bool_ | np.int_]): The index or indices of the sample(s) to retrieve.
-
-        Returns:
-            tuple[torch.Tensor, torch.Tensor]: The data and label tensors for the specified sample(s).
-        """
-        return self.data[item], self.labels[item]
+        super().__init__(data, labels, dtype)
