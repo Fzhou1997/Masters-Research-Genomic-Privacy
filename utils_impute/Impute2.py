@@ -1,5 +1,4 @@
 import os
-import time
 from os import PathLike
 
 from utils_io.windows_to_wsl_path import windows_to_wsl_path
