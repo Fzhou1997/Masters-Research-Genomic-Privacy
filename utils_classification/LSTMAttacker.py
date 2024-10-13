@@ -39,12 +39,20 @@ class LSTMAttacker(nn.Module):
     def num_directions(self) -> int:
         return 2 if self.lstm.bidirectional else 1
 
+    @property
+    def dropout(self) -> float:
+        return self.lstm.dropout
+
+    @property
+    def is_bidirectional(self) -> bool:
+        return self.lstm.bidirectional
+
     def forward(self,
                 x: Tensor,
                 hidden: Tensor,
                 cell: Tensor) -> tuple[tuple[Tensor, Tensor], Tensor]:
         out, (hidden, cell) = self.lstm(x, (hidden, cell))
-        if self.lstm.bidirectional:
+        if self.is_bidirectional:
             hidden_forward = hidden[-2, :, :]
             hidden_backward = hidden[-1, :, :]
             hidden = torch.cat((hidden_forward, hidden_backward), dim=1)
@@ -54,12 +62,8 @@ class LSTMAttacker(nn.Module):
         return (hidden, cell), logits
 
     def init_hidden_cell(self, batch_size: int) -> tuple[Tensor, Tensor]:
-        hidden = torch.zeros(self.lstm.num_layers * (2 if self.lstm.bidirectional else 1),
-                             batch_size,
-                             self.lstm.hidden_size)
-        cell = torch.zeros(self.lstm.num_layers * (2 if self.lstm.bidirectional else 1),
-                            batch_size,
-                            self.lstm.hidden_size)
+        hidden = torch.zeros(self.num_layers * self.num_directions, batch_size, self.hidden_size)
+        cell = torch.zeros(self.num_layers * self.num_directions, batch_size, self.hidden_size)
         return hidden, cell
 
     def save(self,
