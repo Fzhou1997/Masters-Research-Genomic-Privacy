@@ -3,7 +3,7 @@ from abc import abstractmethod
 import numpy as np
 import numpy.typing as npt
 import torch
-from torch import Tensor, tensor
+from torch import Tensor, tensor, Size
 from torch.utils.data import Dataset
 
 class LSTMAttackerDataset(Dataset):
@@ -54,3 +54,13 @@ class LSTMAttackerDataset(Dataset):
             tuple[torch.Tensor, torch.Tensor]: The data and label tensors for the specified sample(s).
         """
         return self.data[item], self.targets[item]
+
+    @property
+    def shape(self) -> Size:
+        """
+        Return the shape of the dataset.
+
+        Returns:
+            Size: The shape of the dataset.
+        """
+        return self.data.shape

@@ -1,46 +1,71 @@
-import math
+import random
+from typing import Any
 
 import torch
-from torch.utils.data import Subset
-
-from .LSTMAttackerDataset import LSTMAttackerDataset
+from torch import Tensor
+from torch.utils.data import Dataset, Subset
 
 
 def stratified_random_split(
-        dataset: LSTMAttackerDataset,
-        lengths: list[int] | list[float]) -> list[Subset]:
+        dataset: Dataset,
+        ratios: list[float]) -> list[Subset]:
     """
-    Perform a stratified random split on the given dataset.
-
-    This function splits the dataset into subsets based on the specified lengths,
-    ensuring that each subset contains a proportional representation of each class.
+    Splits a dataset into stratified random subsets based on the provided ratios.
 
     Args:
-        dataset (LSTMAttackerDataset): The dataset to be split.
-        lengths (list[int] | list[float]): A list of lengths or proportions for each class.
+        dataset (Dataset): The dataset to split. Must have a 'targets' attribute.
+        ratios (List[float]): The ratios for splitting the dataset.
 
     Returns:
-        list[Subset]: A list of subsets of the dataset.
-
-    Raises:
-        ValueError: If the number of classes does not match the number of lengths.
-        ValueError: If the sum of lengths is not 1 or equal to the number of samples.
+        List[Subset]: A list of Subset objects corresponding to the splits.
     """
-    num_samples = len(dataset)
-    num_classes = len(torch.unique(dataset.targets))
-    if not math.isclose(sum(lengths), 1) and sum(lengths) != num_samples:
-        raise ValueError("The sum of lengths must be 1 or equal to the number of samples.")
-    if all(isinstance(length, float) for length in lengths):
-        lengths = [int(length * num_samples) for length in lengths]
-        if sum(lengths) < num_samples:
-            lengths[-1] += num_samples - sum(lengths)
-    indices = [torch.where(dataset.targets == i)[0] for i in range(num_classes)]
-    subsets = []
-    for i, length in enumerate(lengths):
-
-        subset_indices = perms[i][:length]
-        subsets.append(Subset(dataset, subset_indices))
-        perms[i] = perms[i][length:]
+    if not hasattr(dataset, 'targets'):
+        raise AttributeError('Dataset must have a targets attribute.')
+    if not isinstance(dataset.targets, Tensor):
+        raise TypeError('Dataset targets must be a torch.Tensor.')
+    classes = torch.unique(dataset.targets)
+    num_subsets = len(ratios)
+    subsets_indices = [[] for _ in range(num_subsets)]
+    for c in classes:
+        class_indices = torch.where(dataset.targets == c)[0].tolist()
+        class_subsets_indices = _random_split(class_indices, ratios)
+        for s in range(num_subsets):
+            subsets_indices[s].extend(class_subsets_indices[s])
+    for s in range(num_subsets):
+        random.shuffle(subsets_indices[s])
+    subsets = [Subset(dataset, subset_indices) for subset_indices in subsets_indices]
     return subsets
 
+def _random_split(
+        data: list[Any],
+        ratios: list[float]) -> list[list[Any]]:
+    """
+    Splits data into random subsets based on the provided ratios.
+
+    Args:
+        data (List[Any]): The data to split.
+        ratios (List[float]): The ratios for splitting the data.
+
+    Returns:
+        List[List[Any]]: A list of lists, each containing the subset of data.
+    """
+    data_length = len(data)
+    ratios_sum = sum(ratios)
+    subsets_length = [int((ratio / ratios_sum) * data_length) for ratio in ratios]
+    curr_subset = 0
+    while sum(subsets_length) < data_length:
+        subsets_length[curr_subset] += 1
+        curr_subset += 1
+        curr_subset %= len(subsets_length)
+    data_indices = list(range(data_length))
+    random.shuffle(data_indices)
+    subsets = []
+    start = 0
+    for subset_length in subsets_length:
+        end = start + subset_length
+        subsets_indices = data_indices[start:end]
+        subset = [data[i] for i in subsets_indices]
+        subsets.append(subset)
+        start = end
+    return subsets
 

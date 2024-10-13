@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Subset
 from .LSTMAttackerDataset import LSTMAttackerDataset
 
 
-class LSTMAttackerDataLoader(DataLoader):
+class LSTMAttackerDataLoader:
     def __init__(self,
                  dataset: LSTMAttackerDataset | Subset,
                  batch_size: tuple[int, int],
@@ -18,12 +18,12 @@ class LSTMAttackerDataLoader(DataLoader):
         self.current_index = None
         self.sample_indices = None
 
-    def __iter__(self):
-        self.current_index = (0, 0)
-        self.sample_indices = torch.randperm(len(self.dataset)) if self.shuffle else self.sample_indices = torch.arange(len(self.dataset))
-        return self
+    @property
+    def num_batches(self) -> tuple[int, int]:
+        num_samples = self.dataset.shape[0]
+        num_snps = self.dataset.shape[1]
+        num_samples_per_batch = self.batch_size[0]
+        num_snps_per_batch = self.batch_size[1]
+        return num_samples // num_samples_per_batch, num_snps // num_snps_per_batch
 
-    def __next__(self):
-        if self.current_index[0] >= len(self.dataset):
-            raise StopIteration
 
