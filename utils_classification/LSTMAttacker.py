@@ -3,6 +3,7 @@ from typing import Self
 
 import torch
 import torch.nn as nn
+from torch import Tensor
 
 
 class LSTMAttacker(nn.Module):
@@ -22,17 +23,44 @@ class LSTMAttacker(nn.Module):
                             dropout=dropout if num_layers > 1 else 0)
         self.linear = nn.Linear(hidden_size * (2 if bidirectional else 1), output_size)
 
+    @property
+    def input_size(self) -> int:
+        return self.lstm.input_size
+
+    @property
+    def hidden_size(self) -> int:
+        return self.lstm.hidden_size
+
+    @property
+    def num_layers(self) -> int:
+        return self.lstm.num_layers
+
+    @property
+    def num_directions(self) -> int:
+        return 2 if self.lstm.bidirectional else 1
+
     def forward(self,
-                x: torch.Tensor) -> torch.Tensor:
-        out, (hidden, cell) = self.lstm(x)
+                x: Tensor,
+                hidden: Tensor,
+                cell: Tensor) -> tuple[tuple[Tensor, Tensor], Tensor]:
+        out, (hidden, cell) = self.lstm(x, (hidden, cell))
         if self.lstm.bidirectional:
             hidden_forward = hidden[-2, :, :]
             hidden_backward = hidden[-1, :, :]
             hidden = torch.cat((hidden_forward, hidden_backward), dim=1)
         else:
             hidden = hidden[-1, :, :]
-        logits = self.linear(hidden)
-        return logits.squeeze()
+        logits = self.linear(hidden).squeeze()
+        return (hidden, cell), logits
+
+    def init_hidden_cell(self, batch_size: int) -> tuple[Tensor, Tensor]:
+        hidden = torch.zeros(self.lstm.num_layers * (2 if self.lstm.bidirectional else 1),
+                             batch_size,
+                             self.lstm.hidden_size)
+        cell = torch.zeros(self.lstm.num_layers * (2 if self.lstm.bidirectional else 1),
+                            batch_size,
+                            self.lstm.hidden_size)
+        return hidden, cell
 
     def save(self,
              model_dir: str | bytes | os.PathLike[str] | os.PathLike[bytes],
