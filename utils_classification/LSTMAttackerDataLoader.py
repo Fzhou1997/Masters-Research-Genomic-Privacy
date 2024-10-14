@@ -12,7 +12,7 @@ class LSTMAttackerDataLoader(DataLoader):
     A custom DataLoader for LSTMAttackerDataset that handles batching for genomes and SNPs.
 
     Attributes:
-        sample_batch_size (int): The batch size for genome samples.
+        genome_batch_size (int): The batch size for genome samples.
         snp_batch_size (int): The batch size for SNPs.
         sample_indices (list): List of indices for the samples in the dataset.
     """
@@ -34,7 +34,7 @@ class LSTMAttackerDataLoader(DataLoader):
             **kwargs: Additional arguments for the DataLoader.
         """
         super().__init__(dataset, batch_size=genome_batch_size, shuffle=shuffle, **kwargs)
-        self.sample_batch_size = genome_batch_size
+        self.genome_batch_size = genome_batch_size
         self.snp_batch_size = snp_batch_size
         self.sample_indices = list(range(len(dataset)))
         if shuffle:
@@ -82,7 +82,7 @@ class LSTMAttackerDataLoader(DataLoader):
         Returns:
             int: Number of genome batches.
         """
-        return math.ceil(self.num_genomes / self.sample_batch_size)
+        return math.ceil(self.num_genomes / self.genome_batch_size)
 
     @property
     def num_snp_batches(self) -> int:
@@ -120,12 +120,12 @@ class LSTMAttackerDataLoader(DataLoader):
         Raises:
             IndexError: If the genome_batch_index or snp_batch_index is out of range.
         """
-        if genome_batch_index >= self.sample_batch_size:
+        if genome_batch_index >= self.num_genome_batches:
             raise IndexError('Sample batch index out of range.')
-        if snp_batch_index >= self.snp_batch_size:
+        if snp_batch_index >= self.num_snp_batches:
             raise IndexError('SNP batch index out of range.')
-        sample_start = genome_batch_index * self.sample_batch_size
-        sample_end = min(sample_start + self.sample_batch_size, self.num_genomes)
+        sample_start = genome_batch_index * self.genome_batch_size
+        sample_end = min(sample_start + self.genome_batch_size, self.num_genomes)
         snp_start = snp_batch_index * self.snp_batch_size
         snp_end = min(snp_start + self.snp_batch_size, self.num_snps)
         return self.dataset.data[self.sample_indices[sample_start:sample_end], snp_start:snp_end, :]
@@ -143,8 +143,8 @@ class LSTMAttackerDataLoader(DataLoader):
         Raises:
             IndexError: If the sample_batch_index is out of range.
         """
-        if sample_batch_index >= self.sample_batch_size:
+        if sample_batch_index >= self.num_genome_batches:
             raise IndexError('Sample batch index out of range.')
-        sample_start = sample_batch_index * self.sample_batch_size
-        sample_end = min(sample_start + self.sample_batch_size, self.num_genomes)
+        sample_start = sample_batch_index * self.genome_batch_size
+        sample_end = min(sample_start + self.genome_batch_size, self.num_genomes)
         return self.dataset.targets[self.sample_indices[sample_start:sample_end]]

@@ -64,3 +64,33 @@ class LSTMAttackerDataset(Dataset):
             Size: The shape of the dataset.
         """
         return self.data.shape
+
+    @property
+    def num_genomes(self) -> int:
+        """
+        Returns the number of genomes in the dataset.
+
+        Returns:
+            int: Number of genomes.
+        """
+        return self.data.shape[0]
+
+    @property
+    def num_snps(self) -> int:
+        """
+        Returns the number of SNPs in the dataset.
+
+        Returns:
+            int: Number of SNPs.
+        """
+        return self.data.shape[1]
+
+    @property
+    def num_features(self) -> int:
+        """
+        Returns the number of features in the dataset.
+
+        Returns:
+            int: Number of features.
+        """
+        return self.data.shape[2]

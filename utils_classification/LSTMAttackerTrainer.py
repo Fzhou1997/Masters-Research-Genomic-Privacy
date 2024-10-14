@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,34 +11,144 @@ from .LSTMAttacker import LSTMAttacker
 
 
 class LSTMAttackerTrainer:
+    """
+    LSTMAttackerTrainer is responsible for training the LSTMAttacker model.
+
+    Attributes:
+        model (LSTMAttacker): The LSTM model to be trained.
+        criterion (nn.Module): The loss function.
+        optimizer (optim.Optimizer): The optimizer for training.
+        scheduler (LRScheduler): The learning rate scheduler.
+        train_loader (LSTMAttackerDataLoader): DataLoader for training data.
+        eval_loader (LSTMAttackerDataLoader): DataLoader for evaluation data.
+        device (torch.device): The device to run the model on (CPU or GPU).
+    """
+
     def __init__(self,
                  model: LSTMAttacker,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
                  scheduler: LRScheduler,
                  train_loader: LSTMAttackerDataLoader,
-                 test_loader: LSTMAttackerDataLoader,
+                 eval_loader: LSTMAttackerDataLoader,
                  device: torch.device):
+        """
+        Initializes the LSTMAttackerTrainer.
+
+        Args:
+            model (LSTMAttacker): The LSTM model to be trained.
+            criterion (nn.Module): The loss function.
+            optimizer (optim.Optimizer): The optimizer for training.
+            scheduler (LRScheduler): The learning rate scheduler.
+            train_loader (LSTMAttackerDataLoader): DataLoader for training data.
+            eval_loader (LSTMAttackerDataLoader): DataLoader for evaluation data.
+            device (torch.device): The device to run the model on (CPU or GPU).
+        """
         self.model = model
         self.criterion = criterion
-        self.accuracy = Accuracy(task='binary').to(device)
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.train_loader = train_loader
-        self.test_loader = test_loader
+        self.eval_loader = eval_loader
         self.device = device
+        self.accuracy = Accuracy(task='binary').to(device)
 
     def _train_one_epoch(self) -> tuple[float, float]:
+        """
+        Trains the model for one epoch.
+
+        Returns:
+            tuple: A tuple containing the average loss and accuracy for the epoch.
+        """
         running_loss = 0
         self.accuracy.reset()
         self.model.train()
         for genome_batch_index in range(self.train_loader.num_genome_batches):
             self.optimizer.zero_grad()
+            hidden, cell = self.model.init_hidden_cell(self.train_loader.genome_batch_size)
+            hidden, cell = hidden.to(self.device), cell.to(self.device)
             for snp_batch_index in range(self.train_loader.num_snp_batches):
-                data = self.train_loader.get_data_batch(genome_batch_index, snp_batch_index)
+                data = self.train_loader.get_data_batch(genome_batch_index, snp_batch_index).to(self.device)
+                (hidden, cell), logits = self.model(data, hidden, cell)
+            targets = self.train_loader.get_target_batch(genome_batch_index).to(self.device)
+            loss = self.criterion(logits, targets)
+            loss.backward()
+            self.optimizer.step()
+            self.scheduler.step()
+            running_loss += loss.item()
+            pred = self.model.classify(self.model.predict(logits)).long()
+            true = targets.long()
+            self.accuracy.update(pred, true)
+        running_loss /= self.train_loader.num_genomes
+        accuracy = self.accuracy.compute().cpu().item()
+        return running_loss, accuracy
 
-        return total_loss / len(train_loader)
+    def _eval_one_epoch(self) -> tuple[float, float]:
+        """
+        Evaluates the model for one epoch.
 
-    def _eval_one_epoch(self):
+        Returns:
+            tuple: A tuple containing the average loss and accuracy for the epoch.
+        """
+        loss = 0
+        self.accuracy.reset()
+        self.model.eval()
+        with torch.no_grad():
+            for genome_batch_index in range(self.eval_loader.num_genome_batches):
+                hidden, cell = self.model.init_hidden_cell(self.eval_loader.genome_batch_size)
+                hidden, cell = hidden.to(self.device), cell.to(self.device)
+                for snp_batch_index in range(self.eval_loader.num_snp_batches):
+                    data = self.eval_loader.get_data_batch(genome_batch_index, snp_batch_index).to(self.device)
+                    (hidden, cell), logits = self.model(data, hidden, cell)
+                targets = self.eval_loader.get_target_batch(genome_batch_index).to(self.device)
+                loss += self.criterion(logits, targets).item()
+                pred = self.model.classify(self.model.predict(logits)).long()
+                true = targets.long()
+                self.accuracy.update(pred, true)
+        loss /= self.eval_loader.num_genomes
+        accuracy = self.accuracy.compute().cpu().item()
+        return loss, accuracy
 
-    def train(self, ) -> float:
+    def train(self,
+              num_epochs: int,
+              verbose: bool = False) -> tuple[list[float], list[float], list[float], list[float]]:
+        """
+        Trains the model for a specified number of epochs.
+
+        Args:
+            num_epochs (int): The number of epochs to train the model.
+            verbose (bool, optional): If True, prints training progress. Default is False.
+
+        Returns:
+            tuple: A tuple containing lists of training losses, training accuracies, evaluation losses, and evaluation accuracies.
+        """
+        best_epoch = -1
+        best_loss = float('inf')
+        best_state_dict = None
+        train_losses = []
+        train_accuracies = []
+        eval_losses = []
+        eval_accuracies = []
+        for epoch in range(num_epochs):
+            train_loss, train_accuracy = self._train_one_epoch()
+            eval_loss, eval_accuracy = self._eval_one_epoch()
+            train_losses.append(train_loss)
+            train_accuracies.append(train_accuracy)
+            eval_losses.append(eval_loss)
+            eval_accuracies.append(eval_accuracy)
+            if verbose:
+                print(f'Epoch {epoch + 1}/{num_epochs}')
+                print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.2f}')
+                print(f'Evaluation Loss: {eval_loss:.4f}, Evaluation Accuracy: {eval_accuracy:.2f}')
+            if eval_loss < best_loss:
+                if verbose:
+                    print(f'Evaluation Loss Decreased: {best_loss:.4f} -> {eval_loss:.4f}. Saving Model...')
+                best_epoch = epoch
+                best_loss = eval_loss
+                best_state_dict = copy.deepcopy(self.model.state_dict())
+            if verbose:
+                print(25 * "==")
+        if verbose:
+            print(f'Best Model Found at Epoch {best_epoch + 1}.')
+        self.model.load_state_dict(best_state_dict)
+        return train_losses, train_accuracies, eval_losses, eval_accuracies

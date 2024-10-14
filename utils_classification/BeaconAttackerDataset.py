@@ -19,7 +19,7 @@ class BeaconAttackerDataset(LSTMAttackerDataset):
 
     def __init__(self,
                  target_genomes: npt.NDArray[np.bool_],
-                 pool_presences: npt.NDArray[np.bool_],
+                 beacon_presences: npt.NDArray[np.bool_],
                  reference_frequencies: npt.NDArray[np.float64],
                  labels: npt.NDArray[np.bool_],
                  dtype: torch.dtype = torch.float32):
@@ -28,7 +28,7 @@ class BeaconAttackerDataset(LSTMAttackerDataset):
 
         Args:
             target_genomes (npt.NDArray[np.bool_]): An array of target genomes.
-            pool_presences (npt.NDArray[np.bool_]): An array of pool presences.
+            beacon_presences (npt.NDArray[np.bool_]): An array of beacon presences.
             reference_frequencies (npt.NDArray[np.float64]): An array of reference frequencies.
             labels (npt.NDArray[np.bool_]): An array of labels.
             dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
@@ -36,7 +36,7 @@ class BeaconAttackerDataset(LSTMAttackerDataset):
         num_genomes = target_genomes.shape[0]
         num_snps = target_genomes.shape[1]
         target_genomes = target_genomes[..., np.newaxis]
-        pool_presences = np.broadcast_to(pool_presences, (num_genomes, num_snps))[..., np.newaxis]
+        beacon_presences = np.broadcast_to(beacon_presences, (num_genomes, num_snps))[..., np.newaxis]
         reference_frequencies = np.broadcast_to(reference_frequencies, (num_genomes, num_snps))[..., np.newaxis]
-        data = np.concatenate((target_genomes, pool_presences, reference_frequencies), axis=2)
+        data = np.concatenate((target_genomes, beacon_presences, reference_frequencies), axis=2)
         super().__init__(data, labels, dtype)
