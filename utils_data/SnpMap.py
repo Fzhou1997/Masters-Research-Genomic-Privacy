@@ -1,7 +1,7 @@
 from os import PathLike
 from typing import Self
 
-from pandas import read_csv
+from pandas import read_csv, DataFrame
 
 
 class SnpMap:
@@ -28,6 +28,8 @@ class SnpMap:
     save(file_path: str | bytes | PathLike[str] | PathLike[bytes]) -> None:
         Saves the SNP map to a file.
     """
+
+    map: DataFrame
 
     def __init__(self):
         """Initializes the SnpMap with an empty map."""
@@ -72,6 +74,10 @@ class SnpMap:
         """
         for rs, row in self.map.iterrows():
             yield rs, row['chr'], row['pos']
+
+    def sort(self) -> Self:
+        self.map = self.map.sort_values(by=['chr', 'pos'])
+        return self
 
     def from_raw(self,
                  file_path: str | bytes | PathLike[str] | PathLike[bytes]) -> Self:
@@ -132,4 +138,4 @@ class SnpMap:
         file_path : str | bytes | PathLike[str] | PathLike[bytes]
             The path to the file where the SNP map will be saved.
         """
-        self.map.save(file_path, sep='\t')
+        self.map.to_csv(file_path, sep='\t')
