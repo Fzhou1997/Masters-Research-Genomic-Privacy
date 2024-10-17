@@ -13,7 +13,7 @@ class BeaconAttackerDataset(LSTMAttackerDataset):
     and prepares the data for use in a PyTorch DataLoader.
 
     Attributes:
-        data (torch.Tensor): The concatenated data tensor containing target genomes, pool presences, and reference frequencies.
+        features (torch.Tensor): The concatenated data tensor containing target genomes, pool presences, and reference frequencies.
         targets (torch.Tensor): The targets tensor.
     """
 

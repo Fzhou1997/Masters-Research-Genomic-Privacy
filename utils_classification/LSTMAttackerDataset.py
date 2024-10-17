@@ -1,37 +1,35 @@
-from abc import abstractmethod
-
 import numpy as np
 import numpy.typing as npt
 import torch
 from torch import Tensor, tensor, Size
-from torch.utils.data import Dataset
 
-class LSTMAttackerDataset(Dataset):
+from utils_torch.SequentialBinaryClassificationDataset import SequentialBinaryClassificationDataset
+
+
+class LSTMAttackerDataset(SequentialBinaryClassificationDataset):
     """
     An abstract base class for attacker datasets.
 
     This class defines the basic structure of an attacker dataset, which includes data and targets tensors.
 
     Attributes:
-        data (torch.Tensor): The data tensor.
+        features (torch.Tensor): The features tensor.
         targets (torch.Tensor): The targets tensor.
     """
 
-    @abstractmethod
     def __init__(self,
-                 data: npt.NDArray[np.float64],
+                 features: npt.NDArray[np.float64],
                  labels: npt.NDArray[np.bool_],
                  dtype: torch.dtype = torch.float32) -> None:
         """
         Initialize the AbstractAttackerDataset.
 
         Args:
-            data (npt.NDArray[np.float64]): The data array.
+            features (npt.NDArray[np.float64]): The data array.
             labels (npt.NDArray[np.bool_]): The labels array.
             dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
         """
-        self.data = tensor(data, dtype=dtype)
-        self.targets = tensor(labels, dtype=dtype)
+        super(LSTMAttackerDataset, self).__init__(tensor(features, dtype=dtype), tensor(labels, dtype=dtype))
 
     def __len__(self) -> int:
         """
@@ -40,7 +38,7 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             int: The number of samples.
         """
-        return self.data.shape[0]
+        return self.features.shape[0]
 
     def __getitem__(self,
                     item: int | slice | list[bool | int]) -> tuple[Tensor, Tensor]:
@@ -53,7 +51,7 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             tuple[torch.Tensor, torch.Tensor]: The data and label tensors for the specified sample(s).
         """
-        return self.data[item], self.targets[item]
+        return self.features[item], self.targets[item]
 
     @property
     def shape(self) -> Size:
@@ -63,7 +61,7 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             Size: The shape of the dataset.
         """
-        return self.data.shape
+        return self.features.shape
 
     @property
     def num_genomes(self) -> int:
@@ -73,7 +71,7 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             int: Number of genomes.
         """
-        return self.data.shape[0]
+        return self.num_samples
 
     @property
     def num_snps(self) -> int:
@@ -83,7 +81,7 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             int: Number of SNPs.
         """
-        return self.data.shape[1]
+        return self.num_timesteps
 
     @property
     def num_features(self) -> int:
@@ -93,4 +91,4 @@ class LSTMAttackerDataset(Dataset):
         Returns:
             int: Number of features.
         """
-        return self.data.shape[2]
+        return self.features.shape[2]

@@ -1,20 +1,18 @@
 import random
 from typing import Any
 
-import torch
-
-from .FeatureTargetDataset import FeatureTargetDataset
+from .BinaryClassificationDataset import BinaryClassificationDataset
 from .FeatureTargetSubset import FeatureTargetSubset
 
 
 def stratified_random_split(
-        dataset: FeatureTargetDataset,
+        dataset: BinaryClassificationDataset,
         ratios: list[float]) -> list[FeatureTargetSubset]:
-    classes = torch.unique(dataset.targets)
+    classes = dataset.classes.tolist()
     num_subsets = len(ratios)
     subsets_indices = [[] for _ in range(num_subsets)]
     for c in classes:
-        class_indices = torch.where(dataset.targets == c)[0].tolist()
+        class_indices = dataset.get_class_indices(c).tolist()
         class_subsets_indices = _random_split(class_indices, ratios)
         for s in range(num_subsets):
             subsets_indices[s].extend(class_subsets_indices[s])

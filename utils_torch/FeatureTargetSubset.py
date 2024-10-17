@@ -1,6 +1,6 @@
-from typing import Sequence
+from typing import Sequence, Sized
 
-from torch import Tensor
+from torch import Tensor, Size
 from torch.utils.data import Subset
 
 from utils_torch.FeatureTargetDataset import FeatureTargetDataset
@@ -21,6 +21,12 @@ class FeatureTargetSubset(Subset[FeatureTargetDataset]):
         if isinstance(self.indices, list):
             return self.dataset[[self.indices[i] for i in idx]]
         return self.dataset[self.indices[idx]]
+
+    @property
+    def shape(self) -> Size:
+        dataset_size = list(self.dataset.shape)
+        dataset_size[0] = len(self)
+        return Size(tuple(dataset_size))
 
     @property
     def features(self) -> Tensor:

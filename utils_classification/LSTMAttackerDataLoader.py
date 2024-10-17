@@ -4,6 +4,7 @@ import random
 from torch import Tensor
 from torch.utils.data import DataLoader, Subset
 
+from utils_torch.FeatureTargetSubset import FeatureTargetSubset
 from .LSTMAttackerDataset import LSTMAttackerDataset
 
 
@@ -17,8 +18,13 @@ class LSTMAttackerDataLoader(DataLoader):
         sample_indices (list): List of indices for the samples in the dataset.
     """
 
+    dataset: LSTMAttackerDataset | FeatureTargetSubset
+    genome_batch_size: int
+    snp_batch_size: int
+    sample_indices: list[int]
+
     def __init__(self,
-                 dataset: LSTMAttackerDataset | Subset,
+                 dataset: LSTMAttackerDataset | FeatureTargetSubset,
                  genome_batch_size: int = 32,
                  snp_batch_size: int = 4096,
                  shuffle: bool = False,
@@ -58,8 +64,6 @@ class LSTMAttackerDataLoader(DataLoader):
         Returns:
             int: Number of SNPs.
         """
-        if isinstance(self.dataset, Subset):
-            return self.dataset.dataset.shape[1]
         return self.dataset.shape[1]
 
     @property
@@ -70,8 +74,6 @@ class LSTMAttackerDataLoader(DataLoader):
         Returns:
             int: Number of features.
         """
-        if isinstance(self.dataset, Subset):
-            return self.dataset.dataset.shape[2]
         return self.dataset.shape[2]
 
     @property
@@ -128,7 +130,8 @@ class LSTMAttackerDataLoader(DataLoader):
         sample_end = min(sample_start + self.genome_batch_size, self.num_genomes)
         snp_start = snp_batch_index * self.snp_batch_size
         snp_end = min(snp_start + self.snp_batch_size, self.num_snps)
-        return self.dataset.data[self.sample_indices[sample_start:sample_end], snp_start:snp_end, :]
+        idx = self.sample_indices[sample_start:sample_end], slice(snp_start, snp_end, 1), slice(None, None, 1)
+        return self.dataset.get_features(idx)
 
     def get_target_batch(self, sample_batch_index: int) -> Tensor:
         """
@@ -147,4 +150,4 @@ class LSTMAttackerDataLoader(DataLoader):
             raise IndexError('Sample batch index out of range.')
         sample_start = sample_batch_index * self.genome_batch_size
         sample_end = min(sample_start + self.genome_batch_size, self.num_genomes)
-        return self.dataset.targets[self.sample_indices[sample_start:sample_end]]
+        return self.dataset.get_targets(self.sample_indices[sample_start:sample_end])
