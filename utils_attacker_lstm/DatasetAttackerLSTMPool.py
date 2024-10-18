@@ -2,10 +2,10 @@ import numpy as np
 import numpy.typing as npt
 import torch
 
-from .LSTMAttackerDataset import LSTMAttackerDataset
+from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
-class PoolAttackerDataset(LSTMAttackerDataset):
+class DatasetAttackerLSTMPool(DatasetAttackerLSTM):
     """
     A custom Dataset class for Pool Attacker.
 

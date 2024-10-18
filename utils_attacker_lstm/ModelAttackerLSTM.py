@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 
 
-class LSTMAttacker(nn.Module):
+class ModelAttackerLSTM(nn.Module):
     """
     LSTMAttacker is a neural network module that uses an LSTM layer followed by a linear layer
     for sequence classification tasks.
@@ -34,7 +34,7 @@ class LSTMAttacker(nn.Module):
             dropout (float, optional): If non-zero, introduces a Dropout layer on the outputs of each LSTM layer except the last layer. Default is 0.0.
             output_size (int, optional): The number of output features. Default is 1.
         """
-        super(LSTMAttacker, self).__init__()
+        super(ModelAttackerLSTM, self).__init__()
         self.lstm = nn.LSTM(input_size=input_size,
                             hidden_size=hidden_size,
                             num_layers=num_layers,
@@ -92,10 +92,10 @@ class LSTMAttacker(nn.Module):
         if self.is_bidirectional:
             hidden_forward = hidden[-2, :, :]
             hidden_backward = hidden[-1, :, :]
-            hidden = torch.cat((hidden_forward, hidden_backward), dim=1)
+            last_hidden = torch.cat((hidden_forward, hidden_backward), dim=1)
         else:
-            hidden = hidden[-1, :, :]
-        logits = self.linear(hidden).squeeze()
+            last_hidden = hidden[-1, :, :]
+        logits = self.linear(last_hidden).squeeze()
         return (hidden, cell), logits
 
     def init_hidden_cell(self, batch_size: int) -> tuple[Tensor, Tensor]:

@@ -1,13 +1,13 @@
 import random
 from typing import Any
 
-from .BinaryClassificationDataset import BinaryClassificationDataset
-from .FeatureTargetSubset import FeatureTargetSubset
+from .DatasetFeatureTargetClassificationBinary import BinaryClassificationDataset
+from .SubsetFeatureTarget import SubsetFeatureTarget
 
 
 def stratified_random_split(
         dataset: BinaryClassificationDataset,
-        ratios: list[float]) -> list[FeatureTargetSubset]:
+        ratios: list[float]) -> list[SubsetFeatureTarget]:
     classes = dataset.classes.tolist()
     num_subsets = len(ratios)
     subsets_indices = [[] for _ in range(num_subsets)]
@@ -18,7 +18,7 @@ def stratified_random_split(
             subsets_indices[s].extend(class_subsets_indices[s])
     for s in range(num_subsets):
         random.shuffle(subsets_indices[s])
-    subsets = [FeatureTargetSubset(dataset, subset_indices) for subset_indices in subsets_indices]
+    subsets = [SubsetFeatureTarget(dataset, subset_indices) for subset_indices in subsets_indices]
     return subsets
 
 def _random_split(

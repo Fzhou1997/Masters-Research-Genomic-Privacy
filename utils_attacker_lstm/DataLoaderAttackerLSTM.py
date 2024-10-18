@@ -4,8 +4,8 @@ import random
 from torch import Tensor
 from torch.utils.data import DataLoader, Subset
 
-from utils_torch.FeatureTargetSubset import FeatureTargetSubset
-from .LSTMAttackerDataset import LSTMAttackerDataset
+from utils_torch.SubsetFeatureTarget import SubsetFeatureTarget
+from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
 class LSTMAttackerDataLoader(DataLoader):
@@ -18,13 +18,13 @@ class LSTMAttackerDataLoader(DataLoader):
         sample_indices (list): List of indices for the samples in the dataset.
     """
 
-    dataset: LSTMAttackerDataset | FeatureTargetSubset
+    dataset: DatasetAttackerLSTM | SubsetFeatureTarget
     genome_batch_size: int
     snp_batch_size: int
     sample_indices: list[int]
 
     def __init__(self,
-                 dataset: LSTMAttackerDataset | FeatureTargetSubset,
+                 dataset: DatasetAttackerLSTM | SubsetFeatureTarget,
                  genome_batch_size: int = 32,
                  snp_batch_size: int = 4096,
                  shuffle: bool = False,
@@ -33,7 +33,7 @@ class LSTMAttackerDataLoader(DataLoader):
         Initializes the LSTMAttackerDataLoader.
 
         Args:
-            dataset (LSTMAttackerDataset | Subset): The dataset to load data from.
+            dataset (DatasetAttackerLSTM | Subset): The dataset to load data from.
             genome_batch_size (int, optional): The batch size for genome samples. Defaults to 32.
             snp_batch_size (int, optional): The batch size for SNPs. Defaults to 4096.
             shuffle (bool, optional): Whether to shuffle the dataset. Defaults to False.
@@ -106,9 +106,25 @@ class LSTMAttackerDataLoader(DataLoader):
         """
         return self.num_genome_batches, self.num_snp_batches
 
-    def get_data_batch(self,
-                       genome_batch_index: int,
-                       snp_batch_index: int) -> Tensor:
+    def get_genome_batch_size(self, genome_batch_index: int) -> int:
+        """
+        Returns the genome batch size for a given genome batch index.
+
+        Args:
+            genome_batch_index (int): The index of the genome batch.
+
+        Returns:
+            int: The genome batch size.
+        """
+        if genome_batch_index >= self.num_genome_batches:
+            raise IndexError('Sample batch index out of range.')
+        sample_start = genome_batch_index * self.genome_batch_size
+        sample_end = min(sample_start + self.genome_batch_size, self.num_genomes)
+        return sample_end - sample_start
+
+    def get_features_batch(self,
+                           genome_batch_index: int,
+                           snp_batch_index: int) -> Tensor:
         """
         Retrieves a batch of data from the dataset.
 

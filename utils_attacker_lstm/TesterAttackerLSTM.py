@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ConfusionMatrix
 
-from utils_classification import LSTMAttacker, LSTMAttackerDataLoader
+from utils_attacker_lstm import ModelAttackerLSTM, LSTMAttackerDataLoader
 
 
 class LSTMAttackerTester:
@@ -10,7 +10,7 @@ class LSTMAttackerTester:
     LSTMAttackerTester is responsible for testing the LSTMAttacker model using various metrics.
 
     Attributes:
-        model (LSTMAttacker): The LSTM model to be tested.
+        model (ModelAttackerLSTM): The LSTM model to be tested.
         criterion (nn.Module): The loss function.
         test_loader (LSTMAttackerDataLoader): DataLoader for testing data.
         device (torch.device): The device to run the model on (CPU or GPU).
@@ -23,7 +23,7 @@ class LSTMAttackerTester:
     """
 
     def __init__(self,
-                 model: LSTMAttacker,
+                 model: ModelAttackerLSTM,
                  criterion: nn.Module,
                  test_loader: LSTMAttackerDataLoader,
                  device: torch.device):
@@ -31,7 +31,7 @@ class LSTMAttackerTester:
         Initializes the LSTMAttackerTester.
 
         Args:
-            model (LSTMAttacker): The LSTM model to be tested.
+            model (ModelAttackerLSTM): The LSTM model to be tested.
             criterion (nn.Module): The loss function.
             test_loader (LSTMAttackerDataLoader): DataLoader for testing data.
             device (torch.device): The device to run the model on (CPU or GPU).
@@ -64,11 +64,10 @@ class LSTMAttackerTester:
         self.confusion_matrix.reset()
         with torch.no_grad():
             for genome_batch_index in range(self.test_loader.num_genome_batches):
-                hidden, cell = self.model.init_hidden_cell(self.test_loader.genome_batch_size)
+                hidden, cell = self.model.init_hidden_cell(self.test_loader.get_genome_batch_size(genome_batch_index))
                 hidden, cell = hidden.to(self.device), cell.to(self.device)
                 for snp_batch_index in range(self.test_loader.num_snp_batches):
-                    features, labels = self.test_loader.get_data_batch(genome_batch_index, snp_batch_index)
-                    features, labels = features.to(self.device), labels.to(self.device)
+                    features = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
                     (hidden, cell), logits = self.model(features, hidden, cell)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 loss += self.criterion(logits, targets).item()
@@ -80,7 +79,7 @@ class LSTMAttackerTester:
                 self.f1_score.update(pred, true)
                 self.auroc.update(pred, true)
                 self.confusion_matrix.update(pred, true)
-        loss /= self.test_loader.num_genomes
+        loss /= self.test_loader.num_genome_batches
         accuracy = self.accuracy.compute().cpu().item()
         precision = self.precision.compute().cpu().item()
         recall = self.recall.compute().cpu().item()

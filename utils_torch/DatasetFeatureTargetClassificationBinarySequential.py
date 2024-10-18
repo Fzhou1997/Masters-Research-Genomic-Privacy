@@ -1,4 +1,4 @@
-from utils_torch.BinaryClassificationDataset import BinaryClassificationDataset
+from utils_torch.DatasetFeatureTargetClassificationBinary import BinaryClassificationDataset
 
 
 class SequentialBinaryClassificationDataset(BinaryClassificationDataset):

@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torchmetrics import Accuracy
 
 from . import LSTMAttackerDataLoader
-from .LSTMAttacker import LSTMAttacker
+from .ModelAttackerLSTM import ModelAttackerLSTM
 
 
 class LSTMAttackerTrainer:
@@ -15,7 +15,7 @@ class LSTMAttackerTrainer:
     LSTMAttackerTrainer is responsible for training the LSTMAttacker model.
 
     Attributes:
-        model (LSTMAttacker): The LSTM model to be trained.
+        model (ModelAttackerLSTM): The LSTM model to be trained.
         criterion (nn.Module): The loss function.
         optimizer (optim.Optimizer): The optimizer for training.
         scheduler (LRScheduler): The learning rate scheduler.
@@ -25,18 +25,18 @@ class LSTMAttackerTrainer:
     """
 
     def __init__(self,
-                 model: LSTMAttacker,
+                 model: ModelAttackerLSTM,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
-                 scheduler: LRScheduler,
                  train_loader: LSTMAttackerDataLoader,
                  eval_loader: LSTMAttackerDataLoader,
-                 device: torch.device):
+                 device: torch.device,
+                 scheduler: LRScheduler = None):
         """
         Initializes the LSTMAttackerTrainer.
 
         Args:
-            model (LSTMAttacker): The LSTM model to be trained.
+            model (ModelAttackerLSTM): The LSTM model to be trained.
             criterion (nn.Module): The loss function.
             optimizer (optim.Optimizer): The optimizer for training.
             scheduler (LRScheduler): The learning rate scheduler.
@@ -65,21 +65,22 @@ class LSTMAttackerTrainer:
         self.model.train()
         for genome_batch_index in range(self.train_loader.num_genome_batches):
             self.optimizer.zero_grad()
-            hidden, cell = self.model.init_hidden_cell(self.train_loader.genome_batch_size)
+            hidden, cell = self.model.init_hidden_cell(self.train_loader.get_genome_batch_size(genome_batch_index))
             hidden, cell = hidden.to(self.device), cell.to(self.device)
             for snp_batch_index in range(self.train_loader.num_snp_batches):
-                data = self.train_loader.get_data_batch(genome_batch_index, snp_batch_index).to(self.device)
+                data = self.train_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
                 (hidden, cell), logits = self.model(data, hidden, cell)
             targets = self.train_loader.get_target_batch(genome_batch_index).to(self.device)
             loss = self.criterion(logits, targets)
             loss.backward()
             self.optimizer.step()
-            self.scheduler.step()
+            if self.scheduler is not None:
+                self.scheduler.step()
             running_loss += loss.item()
             pred = self.model.classify(self.model.predict(logits)).long()
             true = targets.long()
             self.accuracy.update(pred, true)
-        running_loss /= self.train_loader.num_genomes
+        running_loss /= self.train_loader.num_genome_batches
         accuracy = self.accuracy.compute().cpu().item()
         return running_loss, accuracy
 
@@ -95,17 +96,17 @@ class LSTMAttackerTrainer:
         self.model.eval()
         with torch.no_grad():
             for genome_batch_index in range(self.eval_loader.num_genome_batches):
-                hidden, cell = self.model.init_hidden_cell(self.eval_loader.genome_batch_size)
+                hidden, cell = self.model.init_hidden_cell(self.eval_loader.get_genome_batch_size(genome_batch_index))
                 hidden, cell = hidden.to(self.device), cell.to(self.device)
                 for snp_batch_index in range(self.eval_loader.num_snp_batches):
-                    data = self.eval_loader.get_data_batch(genome_batch_index, snp_batch_index).to(self.device)
+                    data = self.eval_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
                     (hidden, cell), logits = self.model(data, hidden, cell)
                 targets = self.eval_loader.get_target_batch(genome_batch_index).to(self.device)
                 loss += self.criterion(logits, targets).item()
                 pred = self.model.classify(self.model.predict(logits)).long()
                 true = targets.long()
                 self.accuracy.update(pred, true)
-        loss /= self.eval_loader.num_genomes
+        loss /= self.eval_loader.num_genome_batches
         accuracy = self.accuracy.compute().cpu().item()
         return loss, accuracy
 

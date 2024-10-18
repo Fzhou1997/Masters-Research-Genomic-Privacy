@@ -4,7 +4,7 @@ import numpy as np
 from torch import Tensor, Dataset
 
 
-class FeatureTargetMmapDataset(Dataset):
+class DatasetFeatureTargetMMap(Dataset):
 
     features_mmap: mmap
     targets_mmap: mmap

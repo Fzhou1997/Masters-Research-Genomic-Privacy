@@ -2,7 +2,7 @@ from torch import Tensor, Size
 from torch.utils.data import Dataset
 
 
-class FeatureTargetDataset(Dataset[tuple[Tensor, Tensor]]):
+class DatasetFeatureTarget(Dataset[tuple[Tensor, Tensor]]):
 
     features: Tensor
     targets: Tensor
@@ -11,6 +11,8 @@ class FeatureTargetDataset(Dataset[tuple[Tensor, Tensor]]):
         return self.features.shape[0]
 
     def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
+        if isinstance(idx, tuple):
+            return self.features[idx], self.targets[idx[0]]
         return self.features[idx], self.targets[idx]
 
     @property

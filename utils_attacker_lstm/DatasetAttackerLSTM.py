@@ -1,12 +1,12 @@
 import numpy as np
 import numpy.typing as npt
 import torch
-from torch import Tensor, tensor, Size
+from torch import tensor
 
-from utils_torch.SequentialBinaryClassificationDataset import SequentialBinaryClassificationDataset
+from utils_torch.DatasetFeatureTargetClassificationBinarySequential import SequentialBinaryClassificationDataset
 
 
-class LSTMAttackerDataset(SequentialBinaryClassificationDataset):
+class DatasetAttackerLSTM(SequentialBinaryClassificationDataset):
     """
     An abstract base class for attacker datasets.
 
@@ -29,39 +29,8 @@ class LSTMAttackerDataset(SequentialBinaryClassificationDataset):
             labels (npt.NDArray[np.bool_]): The labels array.
             dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
         """
-        super(LSTMAttackerDataset, self).__init__(tensor(features, dtype=dtype), tensor(labels, dtype=dtype))
-
-    def __len__(self) -> int:
-        """
-        Return the number of samples in the dataset.
-
-        Returns:
-            int: The number of samples.
-        """
-        return self.features.shape[0]
-
-    def __getitem__(self,
-                    item: int | slice | list[bool | int]) -> tuple[Tensor, Tensor]:
-        """
-        Retrieve a sample and its label from the dataset.
-
-        Args:
-            item (int | slice | list[bool | int]): The index or indices of the sample(s) to retrieve.
-
-        Returns:
-            tuple[torch.Tensor, torch.Tensor]: The data and label tensors for the specified sample(s).
-        """
-        return self.features[item], self.targets[item]
-
-    @property
-    def shape(self) -> Size:
-        """
-        Return the shape of the dataset.
-
-        Returns:
-            Size: The shape of the dataset.
-        """
-        return self.features.shape
+        self.features = tensor(features, dtype=dtype)
+        self.targets = tensor(labels, dtype=dtype)
 
     @property
     def num_genomes(self) -> int:

@@ -1,25 +1,29 @@
-from typing import Sequence, Sized
+from typing import Sequence
 
 from torch import Tensor, Size
 from torch.utils.data import Subset
 
-from utils_torch.FeatureTargetDataset import FeatureTargetDataset
+from utils_torch.DatasetFeatureTarget import DatasetFeatureTarget
 
 
-class FeatureTargetSubset(Subset[FeatureTargetDataset]):
+class SubsetFeatureTarget(Subset[DatasetFeatureTarget]):
 
-    dataset: FeatureTargetDataset
+    dataset: DatasetFeatureTarget
     indices: Sequence[int]
 
-    def __init__(self, dataset: FeatureTargetDataset, indices: Sequence[int]):
+    def __init__(self, dataset: DatasetFeatureTarget, indices: Sequence[int]):
         super().__init__(dataset, indices)
 
     def __len__(self) -> int:
         return len(self.indices)
 
     def __getitem__(self, idx) -> tuple[Tensor, Tensor]:
-        if isinstance(self.indices, list):
+        if isinstance(idx, list):
             return self.dataset[[self.indices[i] for i in idx]]
+        if isinstance(idx, tuple) and isinstance(idx[0], list):
+            indices = list(idx)
+            indices[0] = [self.indices[i] for i in idx[0]]
+            return self.dataset[tuple(indices)]
         return self.dataset[self.indices[idx]]
 
     @property
@@ -37,12 +41,16 @@ class FeatureTargetSubset(Subset[FeatureTargetDataset]):
         return self.dataset.targets[self.indices]
 
     def get_features(self, idx) -> Tensor:
-        if isinstance(self.indices, list):
+        if isinstance(idx, list):
             return self.dataset.features[[self.indices[i] for i in idx]]
+        if isinstance(idx, tuple) and isinstance(idx[0], list):
+            indices = list(idx)
+            indices[0] = [self.indices[i] for i in idx[0]]
+            return self.dataset.features[tuple(indices)]
         return self.dataset.features[self.indices[idx]]
 
     def get_targets(self, idx) -> Tensor:
-        if isinstance(self.indices, list):
+        if isinstance(idx, list):
             return self.dataset.targets[[self.indices[i] for i in idx]]
         return self.dataset.targets[self.indices[idx]]
 
