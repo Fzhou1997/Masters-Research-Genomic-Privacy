@@ -1,4 +1,4 @@
-from .ModelAttackerLSTM import *
+from .ModelAttackerLSTMLinear import *
 from .DatasetAttackerLSTM import *
 from .DataLoaderAttackerLSTM import *
 from .TrainerAttackerLSTM import *

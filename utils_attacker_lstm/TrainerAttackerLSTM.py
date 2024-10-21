@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torchmetrics import Accuracy
 
 from . import LSTMAttackerDataLoader
-from .ModelAttackerLSTM import ModelAttackerLSTM
+from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
 
 class LSTMAttackerTrainer:
@@ -15,7 +15,7 @@ class LSTMAttackerTrainer:
     LSTMAttackerTrainer is responsible for training the LSTMAttacker model.
 
     Attributes:
-        model (ModelAttackerLSTM): The LSTM model to be trained.
+        model (ModelAttackerLSTMLinear): The LSTM model to be trained.
         criterion (nn.Module): The loss function.
         optimizer (optim.Optimizer): The optimizer for training.
         scheduler (LRScheduler): The learning rate scheduler.
@@ -25,7 +25,7 @@ class LSTMAttackerTrainer:
     """
 
     def __init__(self,
-                 model: ModelAttackerLSTM,
+                 model: ModelAttackerLSTMLinear,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
                  train_loader: LSTMAttackerDataLoader,
@@ -36,7 +36,7 @@ class LSTMAttackerTrainer:
         Initializes the LSTMAttackerTrainer.
 
         Args:
-            model (ModelAttackerLSTM): The LSTM model to be trained.
+            model (ModelAttackerLSTMLinear): The LSTM model to be trained.
             criterion (nn.Module): The loss function.
             optimizer (optim.Optimizer): The optimizer for training.
             scheduler (LRScheduler): The learning rate scheduler.
