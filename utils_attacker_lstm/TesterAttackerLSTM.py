@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ConfusionMatrix
 
-from utils_attacker_lstm import ModelAttackerLSTMLinear, LSTMAttackerDataLoader
+from utils_attacker_lstm import ModelAttackerLSTMLinear, DataLoaderAttackerLSTM
 
 
 class LSTMAttackerTester:
@@ -12,7 +12,7 @@ class LSTMAttackerTester:
     Attributes:
         model (ModelAttackerLSTMLinear): The LSTM model to be tested.
         criterion (nn.Module): The loss function.
-        test_loader (LSTMAttackerDataLoader): DataLoader for testing data.
+        test_loader (DataLoaderAttackerLSTM): DataLoader for testing data.
         device (torch.device): The device to run the model on (CPU or GPU).
         accuracy (Accuracy): Metric for calculating accuracy.
         f1_score (F1Score): Metric for calculating F1 score.
@@ -25,7 +25,7 @@ class LSTMAttackerTester:
     def __init__(self,
                  model: ModelAttackerLSTMLinear,
                  criterion: nn.Module,
-                 test_loader: LSTMAttackerDataLoader,
+                 test_loader: DataLoaderAttackerLSTM,
                  device: torch.device):
         """
         Initializes the LSTMAttackerTester.
@@ -33,7 +33,7 @@ class LSTMAttackerTester:
         Args:
             model (ModelAttackerLSTMLinear): The LSTM model to be tested.
             criterion (nn.Module): The loss function.
-            test_loader (LSTMAttackerDataLoader): DataLoader for testing data.
+            test_loader (DataLoaderAttackerLSTM): DataLoader for testing data.
             device (torch.device): The device to run the model on (CPU or GPU).
         """
         self.model = model

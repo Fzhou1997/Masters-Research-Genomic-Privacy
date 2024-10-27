@@ -8,7 +8,7 @@ from utils_torch.SubsetFeatureTarget import SubsetFeatureTarget
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
-class LSTMAttackerDataLoader(DataLoader):
+class DataLoaderAttackerLSTM(DataLoader):
     """
     A custom DataLoader for LSTMAttackerDataset that handles batching for genomes and SNPs.
 

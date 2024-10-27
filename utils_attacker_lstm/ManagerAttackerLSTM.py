@@ -13,11 +13,16 @@ _models_headers = [
     "target",
     "data_num_snps",
     "model_architecture",
-    "model_num_input",
-    "model_num_hidden",
-    "model_num_layers",
-    "model_num_directions",
-    "model_dropout",
+    "model_conv_input_channels",
+    "model_conv_output_channels",
+    "model_conv_kernel_size",
+    "model_conv_stride",
+    "model_lstm_num_input",
+    "model_lstm_hidden_size",
+    "model_lstm_num_layers",
+    "model_lstm_num_directions",
+    "model_lstm_dropout",
+    "model_linear_num_output",
     "train_num_epochs",
     "train_learning_rate",
     "eval_best_epoch",
@@ -31,20 +36,19 @@ _models_headers = [
     "test_auroc"
 ]
 
-class ModelsAttackerLSTM:
+class ManagerAttackerLSTM:
 
-    models_path: str | bytes | PathLike[str] | PathLike[bytes]
+    models_dir: str | bytes | PathLike[str] | PathLike[bytes]
     models: pd.DataFrame
 
     def __init__(self,
-                 models_path: str | bytes | PathLike[str] | PathLike[bytes],
+                 models_dir: str | bytes | PathLike[str] | PathLike[bytes],
                  models_file: str = None):
         if models_file is None:
             self.models = pd.DataFrame()
             self.models.columns = _models_headers
         else:
-            self.models = pd.read_csv(os.path.join(models_path, models_file))
-
+            self.models = pd.read_csv(os.path.join(models_dir, models_file))
         pass
 
     def add_model(self,

@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import LRScheduler
 from torchmetrics import Accuracy
 
-from . import LSTMAttackerDataLoader
+from . import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
 
@@ -19,8 +19,8 @@ class LSTMAttackerTrainer:
         criterion (nn.Module): The loss function.
         optimizer (optim.Optimizer): The optimizer for training.
         scheduler (LRScheduler): The learning rate scheduler.
-        train_loader (LSTMAttackerDataLoader): DataLoader for training data.
-        eval_loader (LSTMAttackerDataLoader): DataLoader for evaluation data.
+        train_loader (DataLoaderAttackerLSTM): DataLoader for training data.
+        eval_loader (DataLoaderAttackerLSTM): DataLoader for evaluation data.
         device (torch.device): The device to run the model on (CPU or GPU).
     """
 
@@ -28,8 +28,8 @@ class LSTMAttackerTrainer:
                  model: ModelAttackerLSTMLinear,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
-                 train_loader: LSTMAttackerDataLoader,
-                 eval_loader: LSTMAttackerDataLoader,
+                 train_loader: DataLoaderAttackerLSTM,
+                 eval_loader: DataLoaderAttackerLSTM,
                  device: torch.device,
                  scheduler: LRScheduler = None):
         """
@@ -40,8 +40,8 @@ class LSTMAttackerTrainer:
             criterion (nn.Module): The loss function.
             optimizer (optim.Optimizer): The optimizer for training.
             scheduler (LRScheduler): The learning rate scheduler.
-            train_loader (LSTMAttackerDataLoader): DataLoader for training data.
-            eval_loader (LSTMAttackerDataLoader): DataLoader for evaluation data.
+            train_loader (DataLoaderAttackerLSTM): DataLoader for training data.
+            eval_loader (DataLoaderAttackerLSTM): DataLoader for evaluation data.
             device (torch.device): The device to run the model on (CPU or GPU).
         """
         self.model = model
