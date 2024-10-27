@@ -21,7 +21,8 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
                                                       lstm_num_layers=lstm_num_layers,
                                                       lstm_bidirectional=lstm_bidirectional,
                                                       lstm_dropout=lstm_dropout)
-        self.linear = nn.Linear(lstm_hidden_size * (2 if lstm_bidirectional else 1), linear_output_size)
+        self.linear = nn.Linear(in_features=lstm_hidden_size * (2 if lstm_bidirectional else 1),
+                                out_features=linear_output_size)
 
     @property
     def linear_output_size(self) -> int:

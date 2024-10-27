@@ -17,7 +17,7 @@ _models_headers = [
     "model_conv_output_channels",
     "model_conv_kernel_size",
     "model_conv_stride",
-    "model_lstm_num_input",
+    "model_lstm_input_size",
     "model_lstm_hidden_size",
     "model_lstm_num_layers",
     "model_lstm_num_directions",
