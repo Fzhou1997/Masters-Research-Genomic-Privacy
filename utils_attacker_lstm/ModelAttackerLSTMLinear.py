@@ -15,14 +15,14 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
                  lstm_num_layers: int = 1,
                  lstm_bidirectional: bool = False,
                  lstm_dropout: float = 0.5,
-                 linear_output_size: int = 1):
+                 linear_out_features: int = 1):
         super(ModelAttackerLSTMLinear, self).__init__(lstm_input_size=lstm_input_size,
                                                       lstm_hidden_size=lstm_hidden_size,
                                                       lstm_num_layers=lstm_num_layers,
                                                       lstm_bidirectional=lstm_bidirectional,
                                                       lstm_dropout=lstm_dropout)
         self.linear = nn.Linear(in_features=lstm_hidden_size * (2 if lstm_bidirectional else 1),
-                                out_features=linear_output_size)
+                                out_features=linear_out_features)
 
     @property
     def linear_output_size(self) -> int:

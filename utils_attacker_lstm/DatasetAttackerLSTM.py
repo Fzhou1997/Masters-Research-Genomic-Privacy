@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 import numpy.typing as npt
 import torch
@@ -19,18 +21,18 @@ class DatasetAttackerLSTM(SequentialBinaryClassificationDataset):
 
     def __init__(self,
                  features: npt.NDArray[np.float64],
-                 labels: npt.NDArray[np.bool_],
+                 targets: npt.NDArray[np.bool_],
                  dtype: torch.dtype = torch.float32) -> None:
         """
         Initialize the AbstractAttackerDataset.
 
         Args:
             features (npt.NDArray[np.float64]): The data array.
-            labels (npt.NDArray[np.bool_]): The labels array.
+            targets (npt.NDArray[np.bool_]): The labels array.
             dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
         """
         self.features = tensor(features, dtype=dtype)
-        self.targets = tensor(labels, dtype=dtype)
+        self.targets = tensor(targets, dtype=dtype)
 
     @property
     def num_genomes(self) -> int:

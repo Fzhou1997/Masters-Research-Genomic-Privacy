@@ -3,8 +3,10 @@ import copy
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import LRScheduler
-from torchmetrics import Accuracy
+from torchmetrics import Accuracy, Metric
 
 from . import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
@@ -19,10 +21,24 @@ class LSTMAttackerTrainer:
         criterion (nn.Module): The loss function.
         optimizer (optim.Optimizer): The optimizer for training.
         scheduler (LRScheduler): The learning rate scheduler.
+        max_grad_norm (float): The maximum gradient norm for clipping.
+        norm_type (float): The type of norm for clipping.
         train_loader (DataLoaderAttackerLSTM): DataLoader for training data.
         eval_loader (DataLoaderAttackerLSTM): DataLoader for evaluation data.
         device (torch.device): The device to run the model on (CPU or GPU).
+        accuracy (Metric): The accuracy metric.
     """
+
+    model: ModelAttackerLSTMLinear
+    criterion: nn.Module
+    optimizer: optim.Optimizer
+    scheduler: LRScheduler
+    max_grad_norm: float
+    norm_type: float
+    train_loader: DataLoaderAttackerLSTM
+    eval_loader: DataLoaderAttackerLSTM
+    device: torch.device
+    accuracy: Metric
 
     def __init__(self,
                  model: ModelAttackerLSTMLinear,
@@ -31,7 +47,9 @@ class LSTMAttackerTrainer:
                  train_loader: DataLoaderAttackerLSTM,
                  eval_loader: DataLoaderAttackerLSTM,
                  device: torch.device,
-                 scheduler: LRScheduler = None):
+                 scheduler: LRScheduler = None,
+                 max_grad_norm: float = None,
+                 norm_type: float = 2):
         """
         Initializes the LSTMAttackerTrainer.
 
@@ -39,21 +57,31 @@ class LSTMAttackerTrainer:
             model (ModelAttackerLSTMLinear): The LSTM model to be trained.
             criterion (nn.Module): The loss function.
             optimizer (optim.Optimizer): The optimizer for training.
-            scheduler (LRScheduler): The learning rate scheduler.
             train_loader (DataLoaderAttackerLSTM): DataLoader for training data.
             eval_loader (DataLoaderAttackerLSTM): DataLoader for evaluation data.
             device (torch.device): The device to run the model on (CPU or GPU).
+            scheduler (LRScheduler, optional): The learning rate scheduler. Default is None.
+            max_grad_norm (float, optional): The maximum gradient norm for clipping. Default is None.
+            norm_type (float, optional): The type of norm for clipping. Default is 2.
         """
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.max_grad_norm = max_grad_norm
+        self.norm_type = norm_type
         self.train_loader = train_loader
         self.eval_loader = eval_loader
         self.device = device
         self.accuracy = Accuracy(task='binary').to(device)
 
-    def _train_one_epoch(self) -> tuple[float, float]:
+        self._num_epochs_trained = 0
+        self._train_losses = []
+        self._train_accuracies = []
+        self._eval_losses = []
+        self._eval_accuracies = []
+
+    def _train_one_epoch(self) -> None:
         """
         Trains the model for one epoch.
 
@@ -73,6 +101,8 @@ class LSTMAttackerTrainer:
             targets = self.train_loader.get_target_batch(genome_batch_index).to(self.device)
             loss = self.criterion(logits, targets)
             loss.backward()
+            if self.max_grad_norm is not None:
+                clip_grad_norm_(self.model.parameters(), self.max_grad_norm, self.norm_type)
             self.optimizer.step()
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -82,9 +112,11 @@ class LSTMAttackerTrainer:
             self.accuracy.update(pred, true)
         running_loss /= self.train_loader.num_genome_batches
         accuracy = self.accuracy.compute().cpu().item()
-        return running_loss, accuracy
+        self._num_epochs_trained += 1
+        self._train_losses.append(running_loss)
+        self._train_accuracies.append(accuracy)
 
-    def _eval_one_epoch(self) -> tuple[float, float]:
+    def _eval_one_epoch(self) -> None:
         """
         Evaluates the model for one epoch.
 
@@ -108,11 +140,12 @@ class LSTMAttackerTrainer:
                 self.accuracy.update(pred, true)
         loss /= self.eval_loader.num_genome_batches
         accuracy = self.accuracy.compute().cpu().item()
-        return loss, accuracy
+        self._eval_losses.append(loss)
+        self._eval_accuracies.append(accuracy)
 
     def train(self,
               num_epochs: int,
-              verbose: bool = False) -> tuple[list[float], list[float], list[float], list[float]]:
+              verbose: bool = False) -> None:
         """
         Trains the model for a specified number of epochs.
 
@@ -126,17 +159,13 @@ class LSTMAttackerTrainer:
         best_epoch = -1
         best_loss = float('inf')
         best_state_dict = None
-        train_losses = []
-        train_accuracies = []
-        eval_losses = []
-        eval_accuracies = []
         for epoch in range(num_epochs):
-            train_loss, train_accuracy = self._train_one_epoch()
-            eval_loss, eval_accuracy = self._eval_one_epoch()
-            train_losses.append(train_loss)
-            train_accuracies.append(train_accuracy)
-            eval_losses.append(eval_loss)
-            eval_accuracies.append(eval_accuracy)
+            self._train_one_epoch()
+            self._eval_one_epoch()
+            train_loss = self._train_losses[-1]
+            train_accuracy = self._train_accuracies[-1]
+            eval_loss = self._eval_losses[-1]
+            eval_accuracy = self._eval_accuracies[-1]
             if verbose:
                 print(f'Epoch {epoch + 1}/{num_epochs}')
                 print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.2f}')
@@ -152,4 +181,59 @@ class LSTMAttackerTrainer:
         if verbose:
             print(f'Best Model Found at Epoch {best_epoch + 1}.')
         self.model.load_state_dict(best_state_dict)
-        return train_losses, train_accuracies, eval_losses, eval_accuracies
+
+    @property
+    def num_epoches_trained(self) -> int:
+        return self._num_epochs_trained
+
+    @property
+    def train_losses(self) -> list[float]:
+        return self._train_losses
+
+    @property
+    def train_accuracies(self) -> list[float]:
+        return self._train_accuracies
+
+    @property
+    def best_train_loss(self) -> float:
+        return min(self._train_losses)
+
+    @property
+    def best_train_accuracy(self) -> float:
+        return max(self._train_accuracies)
+
+    @property
+    def best_train_loss_epoch(self) -> int:
+        return np.argmin(self._train_losses)
+
+    @property
+    def best_train_accuracy_epoch(self) -> int:
+        return np.argmax(self._train_accuracies)
+
+    @property
+    def eval_losses(self) -> list[float]:
+        return self._eval_losses
+
+    @property
+    def eval_accuracies(self) -> list[float]:
+        return self._eval_accuracies
+
+    @property
+    def best_eval_loss(self) -> float:
+        return min(self._eval_losses)
+
+    @property
+    def best_eval_accuracy(self) -> float:
+        return max(self._eval_accuracies)
+
+    @property
+    def best_eval_loss_epoch(self) -> int:
+        return np.argmin(self._eval_losses)
+
+    @property
+    def best_eval_accuracy_epoch(self) -> int:
+        return np.argmax(self._eval_accuracies)
+
+    @property
+    def learning_rate(self) -> float:
+        return self.optimizer.param_groups[0]['lr']

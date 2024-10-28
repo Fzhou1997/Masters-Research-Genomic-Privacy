@@ -21,7 +21,7 @@ class DatasetAttackerLSTMPool(DatasetAttackerLSTM):
                  target_genomes: npt.NDArray[np.bool_],
                  pool_frequencies: npt.NDArray[np.float64],
                  reference_frequencies: npt.NDArray[np.float64],
-                 labels: npt.NDArray[np.bool_],
+                 targets: npt.NDArray[np.bool_],
                  dtype: torch.dtype = torch.float32):
         """
         Initialize the PoolAttackerDataset.
@@ -30,7 +30,7 @@ class DatasetAttackerLSTMPool(DatasetAttackerLSTM):
             target_genomes (npt.NDArray[np.bool_]): An array of target genomes.
             pool_frequencies (npt.NDArray[np.float64]): An array of pool frequencies.
             reference_frequencies (npt.NDArray[np.float64]): An array of reference frequencies.
-            labels (npt.NDArray[np.bool_]): An array of labels.
+            targets (npt.NDArray[np.bool_]): An array of labels.
             dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
         """
         num_genomes = target_genomes.shape[0]
@@ -39,4 +39,4 @@ class DatasetAttackerLSTMPool(DatasetAttackerLSTM):
         pool_frequencies = np.broadcast_to(pool_frequencies, (num_genomes, num_snps))[..., np.newaxis]
         reference_frequencies = np.broadcast_to(reference_frequencies, (num_genomes, num_snps))[..., np.newaxis]
         data = np.concatenate((target_genomes, pool_frequencies, reference_frequencies), axis=2)
-        super().__init__(data, labels, dtype)
+        super().__init__(data, targets, dtype)
