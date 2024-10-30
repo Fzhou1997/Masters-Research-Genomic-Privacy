@@ -1,2 +1,2 @@
-from .ModuleMultiLayerLinear import ModuleMultiLayerLinear
-from .ModuleMultiLayerConv1d import ModuleMultiLayerConv1d
+from .MultiLayerLinear import MultiLayerLinear
+from .MultiLayerConv1d import MultiLayerConv1d

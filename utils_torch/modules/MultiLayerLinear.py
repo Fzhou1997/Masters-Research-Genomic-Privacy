@@ -3,7 +3,7 @@ from typing import Sequence
 from torch import nn
 
 
-class ModuleMultiLayerLinear(nn.Module):
+class MultiLayerLinear(nn.Module):
     """
     A multi-layer linear module with optional batch normalization and dropout.
 
@@ -76,7 +76,7 @@ class ModuleMultiLayerLinear(nn.Module):
             AssertionError: If bias does not have length num_layers.
             AssertionError: If dropout_p, dropout_inplace does not have length num_layers - 1.
         """
-        super(ModuleMultiLayerLinear, self).__init__()
+        super(MultiLayerLinear, self).__init__()
 
         assert num_layers > 0, 'num_layers must be greater than 0'
 
