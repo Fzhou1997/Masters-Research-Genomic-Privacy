@@ -10,46 +10,46 @@ class ModuleMultiLayerConv1d(nn.Module):
 
     Attributes:
         num_batch_norm_layers (int): Number of batch normalization layers.
-        batch_norm (bool | Sequence[bool]): Whether to apply batch normalization.
-        batch_norm_eps (float | Sequence[float]): Epsilon value for batch normalization.
-        batch_norm_momentum (float | Sequence[float]): Momentum value for batch normalization.
-        batch_norm_affine (bool | Sequence[bool]): Whether to learn affine parameters in batch normalization.
-        batch_norm_track_running_stats (bool | Sequence[bool]): Whether to track running statistics in batch normalization.
+        batch_norm (Sequence[bool]): Whether to apply batch normalization.
+        batch_norm_eps (Sequence[float]): Epsilon value for batch normalization.
+        batch_norm_momentum (Sequence[float]): Momentum value for batch normalization.
+        batch_norm_affine (Sequence[bool]): Whether to learn affine parameters in batch normalization.
+        batch_norm_track_running_stats (Sequence[bool]): Whether to track running statistics in batch normalization.
         num_conv_layers (int): Number of convolutional layers.
-        conv_channel_size (int | Sequence[int]): Number of channels in each convolutional layer.
-        conv_kernel_size (int | Sequence[int]): Kernel size for each convolutional layer.
-        conv_stride (int | Sequence[int]): Stride for each convolutional layer.
-        conv_padding (Literal['same', 'valid'] | int | _size_1_t | Sequence[Literal['same', 'valid'] | int | _size_1_t]): Padding for each convolutional layer.
-        conv_dilation (int | _size_1_t | Sequence[int | _size_1_t]): Dilation for each convolutional layer.
-        conv_groups (int | Sequence[int]): Number of groups for each convolutional layer.
-        conv_bias (bool | Sequence[bool]): Whether to use bias in each convolutional layer.
-        conv_padding_mode (Literal['zeros', 'reflect', 'replicate', 'circular'] | Sequence[Literal['zeros', 'reflect', 'replicate', 'circular']]): Padding mode for each convolutional layer.
+        conv_channel_size (Sequence[int]): Number of channels in each convolutional layer.
+        conv_kernel_size (Sequence[int]): Kernel size for each convolutional layer.
+        conv_stride (Sequence[int]): Stride for each convolutional layer.
+        conv_padding (Sequence[Literal['same', 'valid'] | int | _size_1_t]): Padding for each convolutional layer.
+        conv_dilation (Sequence[int | _size_1_t]): Dilation for each convolutional layer.
+        conv_groups (Sequence[int]): Number of groups for each convolutional layer.
+        conv_bias (Sequence[bool]): Whether to use bias in each convolutional layer.
+        conv_padding_mode (Sequence[Literal['zeros', 'reflect', 'replicate', 'circular']]): Padding mode for each convolutional layer.
         num_dropout_layers (int): Number of dropout layers.
-        dropout_p (float | Sequence[float]): Dropout probability for each dropout layer.
-        dropout_inplace (bool | Sequence[bool]): Whether to perform dropout in-place.
+        dropout_p (Sequence[float]): Dropout probability for each dropout layer.
+        dropout_inplace (Sequence[bool]): Whether to perform dropout in-place.
         modules (nn.Sequential): Sequential container of layers.
     """
 
     num_batch_norm_layers: int
-    batch_norm: bool | Sequence[bool]
-    batch_norm_eps: float | Sequence[float]
-    batch_norm_momentum: float | Sequence[float]
-    batch_norm_affine: bool | Sequence[bool]
-    batch_norm_track_running_stats: bool | Sequence[bool]
+    batch_norm: Sequence[bool]
+    batch_norm_eps: Sequence[float]
+    batch_norm_momentum: Sequence[float]
+    batch_norm_affine: Sequence[bool]
+    batch_norm_track_running_stats: Sequence[bool]
 
     num_conv_layers: int
-    conv_channel_size: int | Sequence[int]
-    conv_kernel_size: int | Sequence[int]
-    conv_stride: int | Sequence[int]
-    conv_padding: Literal['same', 'valid'] | int | _size_1_t | Sequence[Literal['same', 'valid'] | int | _size_1_t]
-    conv_dilation: int | _size_1_t | Sequence[int | _size_1_t]
-    conv_groups: int | Sequence[int]
-    conv_bias: bool | Sequence[bool]
-    conv_padding_mode: Literal['zeros', 'reflect', 'replicate', 'circular'] | Sequence[Literal['zeros', 'reflect', 'replicate', 'circular']]
+    conv_channel_size: Sequence[int]
+    conv_kernel_size: Sequence[int]
+    conv_stride: Sequence[int]
+    conv_padding: Sequence[Literal['same', 'valid'] | int | _size_1_t]
+    conv_dilation: Sequence[int | _size_1_t]
+    conv_groups: Sequence[int]
+    conv_bias: Sequence[bool]
+    conv_padding_mode: Sequence[Literal['zeros', 'reflect', 'replicate', 'circular']]
 
     num_dropout_layers: int
-    dropout_p: float | Sequence[float]
-    dropout_inplace: bool | Sequence[bool]
+    dropout_p: Sequence[float]
+    dropout_inplace: Sequence[bool]
 
     modules: nn.Sequential
 
@@ -90,9 +90,18 @@ class ModuleMultiLayerConv1d(nn.Module):
             batch_norm_momentum (float | Sequence[float]): Momentum value for batch normalization.
             batch_norm_affine (bool | Sequence[bool]): Whether to learn affine parameters in batch normalization.
             batch_norm_track_running_stats (bool | Sequence[bool]): Whether to track running statistics in batch normalization.
+
+        Raises:
+            AssertionError: If num_layers is less than or equal to 0.
+            AssertionError: If batch_norm, batch_norm_eps, batch_norm_momentum, batch_norm_affine, and batch_norm_track_running_stats do not have length num_layers.
+            AssertionError: If channel_size does not have length num_layers + 1.
+            AssertionError: If kernel_size, stride, padding, dilation, groups, bias, and padding_mode do not have length num_layers.
+            AssertionError: If dropout_p, dropout_inplace does not have length num_layers - 1.
         """
 
         super(ModuleMultiLayerConv1d, self).__init__()
+
+        assert num_layers > 0, 'num_layers must be greater than 0'
 
         self.num_batch_norm_layers = num_layers
         self.num_conv_layers = num_layers
