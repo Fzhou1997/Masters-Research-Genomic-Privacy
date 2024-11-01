@@ -4,6 +4,39 @@ from torch import nn, Tensor
 from torch.nn.common_types import _size_1_t
 
 
+_Activation = Literal[
+    "none",
+    "Threshold",
+    "ReLU",
+    "RReLU",
+    "Hardtanh",
+    "ReLU6",
+    "Sigmoid",
+    "Hardsigmoid",
+    "Tanh",
+    "SiLU",
+    "Mish",
+    "Hardswish",
+    "ELU",
+    "CELU",
+    "SELU",
+    "GLU",
+    "GELU",
+    "Hardshrink",
+    "LeakyReLU",
+    "LogSigmoid",
+    "Softplus",
+    "Softshrink",
+    "MultiheadAttention",
+    "PReLU",
+    "Softsign",
+    "Tanhshrink",
+    "Softmin",
+    "Softmax",
+    "Softmax2d",
+    "LogSoftmax",
+]
+
 class MultiLayerConv1d(nn.Module):
     """
     A multi-layer 1D convolutional module with optional batch normalization and dropout.
@@ -31,6 +64,8 @@ class MultiLayerConv1d(nn.Module):
     """
 
     num_conv_layers: int
+    num_inner_layers: int
+
     conv_channel_size: Sequence[int]
     conv_kernel_size: Sequence[int]
     conv_stride: Sequence[int]
@@ -39,8 +74,6 @@ class MultiLayerConv1d(nn.Module):
     conv_groups: Sequence[int]
     conv_bias: Sequence[bool]
     conv_padding_mode: Sequence[Literal['zeros', 'reflect', 'replicate', 'circular']]
-
-    num_inner_layers: int
 
     batch_norm: Sequence[bool]
     batch_norm_eps: Sequence[float]
