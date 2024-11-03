@@ -1,5 +1,6 @@
 from typing import Sequence, Union
 
+import torch
 from torch import nn, Size, Tensor
 
 
@@ -12,7 +13,7 @@ class MultiLayerLSTM(nn.Module):
 
     lstm_feature_sizes: Sequence[int]
     lstm_bias: Sequence[bool]
-    lstm_batch_first: Sequence[bool]
+    lstm_batch_first: bool
     lstm_bidirectional: Sequence[bool]
     lstm_proj_size: Sequence[int]
 
@@ -31,11 +32,13 @@ class MultiLayerLSTM(nn.Module):
 
     def __init__(self,
                  num_layers: int,
+                 intput_size: int,
+                 hidden_size: int | Sequence[int],
                  feature_size: int | Sequence[int],
-                 bias: bool | Sequence[bool] = True,
-                 batch_first: bool | Sequence[bool] = True,
-                 bidirectional: bool | Sequence[bool] = False,
                  proj_size: int | Sequence[int] = 0,
+                 bidirectional: bool | Sequence[bool] = False,
+                 bias: bool | Sequence[bool] = True,
+                 batch_first: bool = True,
                  dropout_p: float | Sequence[float] = 0.5,
                  dropout_inplace: bool | Sequence[bool] = True,
                  dropout_first: bool | Sequence[bool] = True,
@@ -46,15 +49,13 @@ class MultiLayerLSTM(nn.Module):
 
         super(MultiLayerLSTM, self).__init__()
 
-        self.num_layers = num_layers
+        self.num_lstm_layers = num_layers
         self.num_inner_layers = num_layers - 1
 
         if isinstance(feature_size, int):
             feature_size = [feature_size] * (self.num_lstm_layers + 1)
         if isinstance(bias, bool):
             bias = [bias] * self.num_lstm_layers
-        if isinstance(batch_first, bool):
-            batch_first = [batch_first] * self.num_lstm_layers
         if isinstance(bidirectional, bool):
             bidirectional = [bidirectional] * self.num_lstm_layers
         if isinstance(proj_size, int):
@@ -78,7 +79,6 @@ class MultiLayerLSTM(nn.Module):
 
         assert len(feature_size) == self.num_lstm_layers + 1, 'feature_size must have length num_layers + 1'
         assert len(bias) == self.num_lstm_layers, 'bias must have length num_layers'
-        assert len(batch_first) == self.num_lstm_layers, 'batch_first must have length num_layers'
         assert len(bidirectional) == self.num_lstm_layers, 'bidirectional must have length num_layers'
         assert len(proj_size) == self.num_lstm_layers, 'proj_size must have length num_layers'
 
@@ -115,32 +115,63 @@ class MultiLayerLSTM(nn.Module):
                                         hidden_size=feature_size[i + 1],
                                         num_layers=1,
                                         bias=bias[i],
-                                        batch_first=batch_first[i],
+                                        batch_first=batch_first,
                                         dropout=0.0,
                                         bidirectional=bidirectional[i],
                                         proj_size=proj_size[i]))
             if i >= self.num_inner_layers:
                 continue
-            if dropout_first[i]:
-                if dropout_p[i] > 0.0:
-                    self.dropout_modules.append(nn.Dropout(p=dropout_p[i],
-                                                   inplace=dropout_inplace[i]))
-                if layer_norm[i]:
-                    self.layer_norm_modules.append(nn.LayerNorm(normalized_shape=feature_size[i + 1],
-                                                     eps=layer_norm_eps[i],
-                                                     elementwise_affine=layer_norm_element_wise_affine[i],
-                                                     bias=layer_norm_bias[i]))
+            if dropout_p[i] > 0.0:
+                self.dropout_modules.append(nn.Dropout(p=dropout_p[i],
+                                                       inplace=dropout_inplace[i]))
             else:
-                if layer_norm[i]:
-                    self.layer_norm_modules.append(nn.LayerNorm(normalized_shape=feature_size[i + 1],
-                                                     eps=layer_norm_eps[i],
-                                                     elementwise_affine=layer_norm_element_wise_affine[i],
-                                                     bias=layer_norm_bias[i]))
-                if dropout_p[i] > 0.0:
-                    self.dropout_modules.append(nn.Dropout(p=dropout_p[i],
-                                                   inplace=dropout_inplace[i]))
+                self.dropout_modules.append(nn.Identity())
+            if layer_norm[i]:
+                self.layer_norm_modules.append(nn.LayerNorm(normalized_shape=feature_size[i + 1],
+                                                            eps=layer_norm_eps[i],
+                                                            elementwise_affine=layer_norm_element_wise_affine[i],
+                                                            bias=layer_norm_bias[i]))
+            else:
+                self.layer_norm_modules.append(nn.Identity())
 
-    def forward(self, x: Tensor) -> tuple[Tensor, tuple[Tensor, Tensor]]:
+    def forward(self,
+                x: Tensor,
+                hx: tuple[Tensor, Tensor] = None) -> tuple[Tensor, tuple[Tensor, Tensor]]:
 
-        pass
+        if x.dim() != 3 and x.dim() != 2:
+            raise ValueError(f"LSTM: Expected input to be 2D or 3D, got {x.dim()}D instead")
+        is_batched = x.dim() == 3
+        batch_dim = 0 if self.lstm_batch_first else 1
+        if not is_batched:
+            x = x.unsqueeze(batch_dim)
 
+
+
+
+        h_n, c_n = None, None
+        for i in range(self.num_lstm_layers):
+            hx_i = None if hx is None else
+            x, (h_i, c_i) = self.lstm_modules[i](x, hx)
+            if i >= self.num_inner_layers:
+                continue
+            if self.dropout_first[i]:
+                x = self.dropout_modules[i](x)
+                x = self.layer_norm_modules[i](x)
+            else:
+                x = self.layer_norm_modules[i](x)
+                x = self.dropout_modules[i](x)
+        return x, (h_n, c_n)
+
+    def get_h_0_c_0(self,
+                    batch_size: int,
+                    device: torch.device = None,
+                    dtype: torch.dtype = None) -> tuple[tuple[Tensor, ...], tuple[Tensor, ...]]:
+        h_0, c_0 = [], []
+        for i in range(self.num_lstm_layers):
+            h_0_i = torch.zeros(
+
+            )
+
+    @property
+    def num_directions(self) -> tuple[int, ...]:
+        return tuple(2 if bidirectional else 1 for bidirectional in self.lstm_bidirectional)
