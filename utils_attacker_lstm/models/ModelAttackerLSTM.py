@@ -29,18 +29,22 @@ class ModelAttackerLSTM(nn.Module):
                  lstm_dropout_p: float | Sequence[float] = 0.5,
                  lstm_dropout_first: bool | Sequence[bool] = True,
                  lstm_layer_norm: bool | Sequence[bool] = True,
-                 lstm_layer_norm_element_wise_affine: bool | Sequence[bool] = True,
                  device: torch.device = None,
                  dtype: torch.dtype = None) -> None:
         """
         Initializes the ModelAttackerLSTM.
 
         Args:
-            lstm_input_size (int): The number of expected features in the input.
-            lstm_hidden_size (int): The number of features in the hidden state.
-            lstm_num_layers (int, optional): Number of recurrent layers. Default is 1.
-            lstm_bidirectional (bool, optional): If True, becomes a bidirectional LSTM. Default is False.
-            lstm_dropout_p (float, optional): If non-zero, introduces a Dropout layer on the outputs of each LSTM layer except the last layer. Default is 0.5.
+            lstm_num_layers (int): The number of layers in the LSTM.
+            lstm_input_size (int): The input size of the LSTM.
+            lstm_hidden_size (int | Sequence[int]): The hidden size of the LSTM.
+            lstm_proj_size (int | Sequence[int], optional): The projection size of the LSTM. Defaults to 0.
+            lstm_bidirectional (bool | Sequence[bool], optional): Whether the LSTM is bidirectional. Defaults to False.
+            lstm_dropout_p (float | Sequence[float], optional): The dropout rate of the LSTM. Defaults to 0.5.
+            lstm_dropout_first (bool | Sequence[bool], optional): Whether the dropout is applied to the input. Defaults to True.
+            lstm_layer_norm (bool | Sequence[bool], optional): Whether layer normalization is applied. Defaults to True.
+            device (torch.device, optional): Device for the tensors. Defaults to None.
+            dtype (torch.dtype, optional): Data type for the tensors. Defaults to None.
         """
         super(ModelAttackerLSTM, self).__init__()
         self.lstm_modules = MultiLayerLSTM(num_layers=lstm_num_layers,
@@ -51,7 +55,6 @@ class ModelAttackerLSTM(nn.Module):
                                            dropout_p=lstm_dropout_p,
                                            dropout_first=lstm_dropout_first,
                                            layer_norm=lstm_layer_norm,
-                                           layer_norm_element_wise_affine=lstm_layer_norm_element_wise_affine,
                                            device=device,
                                            dtype=dtype)
 
@@ -263,13 +266,3 @@ class ModelAttackerLSTM(nn.Module):
             tuple[bool, ...]: The layer_norm rate of the LSTM.
         """
         return self.lstm_modules.lstm_layer_norm
-
-    @property
-    def lstm_layer_norm_element_wise_affine(self) -> tuple[bool, ...]:
-        """
-        Returns the layer_norm_element_wise_affine rate of the LSTM.
-
-        Returns:
-            tuple[bool, ...]: The layer_norm_element_wise_affine rate of the LSTM.
-        """
-        return self.lstm_modules.lstm_layer_norm_element_wise_affine

@@ -16,8 +16,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
         _lstm_linear_dropout_first (bool): If True, apply dropout before batch normalization.
         _lstm_linear_batch_norm (bool): If True, apply batch normalization between the LSTM and linear layers.
         _lstm_linear_batch_norm_momentum (float): The momentum for batch normalization.
-        _lstm_linear_batch_norm_affine (bool): If True, apply affine transformation.
-        _lstm_linear_batch_norm_track_running_stats (bool): If True, track running statistics.
         lstm_linear_dropout_module (nn.Dropout | nn.Identity): The dropout module between the LSTM and linear layers.
         lstm_linear_batch_norm_module (nn.BatchNorm1d | nn.Identity): The batch normalization module between the LSTM and linear layers.
         linear_modules (MultiLayerLinear): The linear layers used in the model.
@@ -28,8 +26,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
 
     _lstm_linear_batch_norm: bool
     _lstm_linear_batch_norm_momentum: float
-    _lstm_linear_batch_norm_affine: bool
-    _lstm_linear_batch_norm_track_running_stats: bool
 
     lstm_linear_dropout_module: nn.Dropout | nn.Identity
     lstm_linear_batch_norm_module: nn.BatchNorm1d | nn.Identity
@@ -46,21 +42,16 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
                  lstm_dropout_p: float | Sequence[float] = 0.5,
                  lstm_dropout_first: bool | Sequence[bool] = True,
                  lstm_layer_norm: bool | Sequence[bool] = True,
-                 lstm_layer_norm_element_wise_affine: bool | Sequence[bool] = True,
                  lstm_linear_dropout_p: float = 0.25,
                  lstm_linear_dropout_first: bool = True,
                  lstm_linear_batch_norm: bool = True,
                  lstm_linear_batch_norm_momentum: float = 0.1,
-                 lstm_linear_batch_norm_affine: bool = True,
-                 lstm_linear_batch_norm_track_running_stats: bool = True,
                  linear_activation: Type[nn.Module] | Sequence[Type[nn.Module]] = nn.ReLU,
                  linear_activation_kwargs: dict[str, any] | Sequence[dict[str, any]] = None,
                  linear_dropout_p: float | Sequence[float] = 0.5,
                  linear_dropout_first: bool | Sequence[bool] = True,
                  linear_batch_norm: bool | Sequence[bool] = True,
                  linear_batch_norm_momentum: float | Sequence[float] = 0.1,
-                 linear_batch_norm_affine: bool | Sequence[bool] = True,
-                 linear_batch_norm_track_running_stats: bool | Sequence[bool] = True,
                  device: torch.device = None,
                  dtype: torch.dtype = None) -> None:
         """
@@ -75,13 +66,10 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             lstm_dropout_p (float | Sequence[float], optional): If non-zero, introduces a Dropout layer on the outputs of each LSTM layer except the last layer. Default is 0.5.
             lstm_dropout_first (bool | Sequence[bool], optional): If True, applies dropout before batch normalization. Default is True.
             lstm_layer_norm (bool | Sequence[bool], optional): If True, applies layer normalization. Default is True.
-            lstm_layer_norm_element_wise_affine (bool | Sequence[bool], optional): If True, applies element-wise affine transformation in layer normalization. Default is True.
             lstm_linear_dropout_p (int, optional): Dropout probability between the lstm and linear layers. Default is 0.25.
             lstm_linear_dropout_first (bool, optional): If True, applies dropout before batch normalization between the lstm and linear layers. Default is True.
             lstm_linear_batch_norm (bool, optional): If True, applies batch normalization between the lstm and linear layers. Default is True.
             lstm_linear_batch_norm_momentum (float, optional): Momentum for batch normalization between the lstm and linear layers. Default is 0.1.
-            lstm_linear_batch_norm_affine (bool, optional): If True, applies affine transformation in batch normalization between the lstm and linear layers. Default is True.
-            lstm_linear_batch_norm_track_running_stats (bool, optional): If True, tracks running statistics in batch normalization between the lstm and linear layers. Default is True.
             linear_num_layers (int, optional): Number of linear layers. Default is 1.
             linear_num_features (int | Sequence[int], optional): Number of features in the linear layers. Default is 8.
             linear_activation (Type[nn.Module] | Sequence[Type[nn.Module]], optional): Activation function for the linear layers. Default is nn.ReLU.
@@ -90,8 +78,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             linear_dropout_first (bool | Sequence[bool], optional): If True, applies dropout before batch normalization in linear layers. Default is True.
             linear_batch_norm (bool | Sequence[bool], optional): If True, applies batch normalization in linear layers. Default is True.
             linear_batch_norm_momentum (float | Sequence[float], optional): Momentum for batch normalization in linear layers. Default is 0.1.
-            linear_batch_norm_affine (bool | Sequence[bool], optional): If True, applies affine transformation in batch normalization in linear layers. Default is True.
-            linear_batch_norm_track_running_stats (bool | Sequence[bool], optional): If True, tracks running statistics in batch normalization in linear layers. Default is True.
             device (torch.device, optional): The device on which to place the model. Default is None.
             dtype (torch.dtype, optional): The data type of the model parameters. Default is None.
         """
@@ -103,7 +89,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
                                                       lstm_dropout_p=lstm_dropout_p,
                                                       lstm_dropout_first=lstm_dropout_first,
                                                       lstm_layer_norm=lstm_layer_norm,
-                                                      lstm_layer_norm_element_wise_affine=lstm_layer_norm_element_wise_affine,
                                                       device=device,
                                                       dtype=dtype)
 
@@ -114,8 +99,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
 
         self._lstm_linear_batch_norm = lstm_linear_batch_norm
         self._lstm_linear_batch_norm_momentum = lstm_linear_batch_norm_momentum
-        self._lstm_linear_batch_norm_affine = lstm_linear_batch_norm_affine
-        self._lstm_linear_batch_norm_track_running_stats = lstm_linear_batch_norm_track_running_stats
 
         if lstm_linear_dropout_p > 0:
             self.lstm_linear_dropout_module = nn.Dropout(p=lstm_linear_dropout_p)
@@ -125,8 +108,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
         if lstm_linear_batch_norm:
             self.lstm_linear_batch_norm_module = nn.BatchNorm1d(num_features=self.lstm_output_size_out,
                                                                 momentum=lstm_linear_batch_norm_momentum,
-                                                                affine=lstm_linear_batch_norm_affine,
-                                                                track_running_stats=lstm_linear_batch_norm_track_running_stats,
                                                                 device=device,
                                                                 dtype=dtype)
         else:
@@ -140,8 +121,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
                                                dropout_first=linear_dropout_first,
                                                batch_norm=linear_batch_norm,
                                                batch_norm_momentum=linear_batch_norm_momentum,
-                                               batch_norm_affine=linear_batch_norm_affine,
-                                               batch_norm_track_running_stats=linear_batch_norm_track_running_stats,
                                                device=device,
                                                dtype=dtype)
 
@@ -197,12 +176,12 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
         return torch.round(predicted)
 
     @property
-    def lstm_linear_dropout_p(self) -> int:
+    def lstm_linear_dropout_p(self) -> float:
         """
         Returns the dropout probability for the dropout layer between the LSTM and linear layers.
 
         Returns:
-            int: Dropout probability.
+            float: Dropout probability.
         """
         return self._lstm_linear_dropout_p
 
@@ -235,26 +214,6 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             float: Momentum for batch normalization.
         """
         return self._lstm_linear_batch_norm_momentum
-
-    @property
-    def lstm_linear_batch_norm_affine(self) -> bool:
-        """
-        Returns whether affine transformation is applied in batch normalization between the LSTM and linear layers.
-
-        Returns:
-            bool: True if affine transformation is applied, False otherwise.
-        """
-        return self._lstm_linear_batch_norm_affine
-
-    @property
-    def lstm_linear_batch_norm_track_running_stats(self) -> bool:
-        """
-        Returns whether running statistics are tracked in batch normalization between the LSTM and linear layers.
-
-        Returns:
-            bool: True if running statistics are tracked, False otherwise.
-        """
-        return self._lstm_linear_batch_norm_track_running_stats
 
     @property
     def linear_num_layers(self) -> int:
@@ -355,23 +314,3 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             tuple[float, ...]: Momentum for batch normalization.
         """
         return self.linear_modules.linear_batch_norm_momentum
-
-    @property
-    def linear_batch_norm_affine(self) -> tuple[bool, ...]:
-        """
-        Returns whether affine transformation is applied in batch normalization in the linear layers.
-
-        Returns:
-            tuple[bool, ...]: True if affine transformation is applied, False otherwise.
-        """
-        return self.linear_modules.linear_batch_norm_affine
-
-    @property
-    def linear_batch_norm_track_running_stats(self) -> tuple[bool, ...]:
-        """
-        Returns whether running statistics are tracked in batch normalization in the linear layers.
-
-        Returns:
-            tuple[bool, ...]: True if running statistics are tracked, False otherwise.
-        """
-        return self.linear_modules.linear_batch_norm_track_running_stats
