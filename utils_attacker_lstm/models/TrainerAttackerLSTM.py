@@ -93,7 +93,7 @@ class LSTMAttackerTrainer:
         self.model.train()
         for genome_batch_index in range(self.train_loader.num_genome_batches):
             self.optimizer.zero_grad()
-            hidden, cell = self.model.init_hidden_cell(self.train_loader.get_genome_batch_size(genome_batch_index))
+            hidden, cell = self.model.get_hx(self.train_loader.get_genome_batch_size(genome_batch_index))
             hidden, cell = hidden.to(self.device), cell.to(self.device)
             for snp_batch_index in range(self.train_loader.num_snp_batches):
                 data = self.train_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
@@ -128,7 +128,7 @@ class LSTMAttackerTrainer:
         self.model.eval()
         with torch.no_grad():
             for genome_batch_index in range(self.eval_loader.num_genome_batches):
-                hidden, cell = self.model.init_hidden_cell(self.eval_loader.get_genome_batch_size(genome_batch_index))
+                hidden, cell = self.model.get_hx(self.eval_loader.get_genome_batch_size(genome_batch_index))
                 hidden, cell = hidden.to(self.device), cell.to(self.device)
                 for snp_batch_index in range(self.eval_loader.num_snp_batches):
                     data = self.eval_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)

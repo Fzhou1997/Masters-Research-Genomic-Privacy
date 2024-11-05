@@ -1,9 +1,2 @@
-from .ModelAttackerLSTM import *
-from .ModelAttackerLSTMLinear import *
-from .ModelAttackerConvLSTMLinear import *
-from .DatasetAttackerLSTM import *
-from .DatasetAttackerLSTMBeacon import *
-from .DatasetAttackerLSTMPool import *
-from .DataLoaderAttackerLSTM import *
-from .TrainerAttackerLSTM import *
-from .TesterAttackerLSTM import *
+import utils_attacker_lstm.data
+import utils_attacker_lstm.models

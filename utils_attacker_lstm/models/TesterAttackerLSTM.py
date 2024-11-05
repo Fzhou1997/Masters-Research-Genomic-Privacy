@@ -88,7 +88,7 @@ class LSTMAttackerTester:
 
         with torch.no_grad():
             for genome_batch_index in range(self.test_loader.num_genome_batches):
-                hidden, cell = self.model.init_hidden_cell(self.test_loader.get_genome_batch_size(genome_batch_index))
+                hidden, cell = self.model.get_hx(self.test_loader.get_genome_batch_size(genome_batch_index))
                 hidden, cell = hidden.to(self.device), cell.to(self.device)
                 for snp_batch_index in range(self.test_loader.num_snp_batches):
                     features = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
