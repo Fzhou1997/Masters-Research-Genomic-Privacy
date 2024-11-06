@@ -12,7 +12,7 @@ from . import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
 
-class LSTMAttackerTrainer:
+class TrainerAttackerLSTM:
     """
     LSTMAttackerTrainer is responsible for training the LSTMAttacker model.
 
@@ -27,6 +27,11 @@ class LSTMAttackerTrainer:
         eval_loader (DataLoaderAttackerLSTM): DataLoader for evaluation data.
         device (torch.device): The device to run the model on (CPU or GPU).
         accuracy (Metric): The accuracy metric.
+        _num_epochs_trained (int): The number of epochs trained.
+        _train_losses (list[float]): List of training losses.
+        _train_accuracies (list[float]): List of training accuracies.
+        _eval_losses (list[float]): List of evaluation losses.
+        _eval_accuracies (list[float]): List of evaluation accuracies.
     """
 
     model: ModelAttackerLSTMLinear
@@ -39,6 +44,12 @@ class LSTMAttackerTrainer:
     eval_loader: DataLoaderAttackerLSTM
     device: torch.device
     accuracy: Metric
+
+    _num_epochs_trained: int
+    _train_losses: list[float]
+    _train_accuracies: list[float]
+    _eval_losses: list[float]
+    _eval_accuracies: list[float]
 
     def __init__(self,
                  model: ModelAttackerLSTMLinear,
@@ -93,11 +104,10 @@ class LSTMAttackerTrainer:
         self.model.train()
         for genome_batch_index in range(self.train_loader.num_genome_batches):
             self.optimizer.zero_grad()
-            hidden, cell = self.model.get_hx(self.train_loader.get_genome_batch_size(genome_batch_index))
-            hidden, cell = hidden.to(self.device), cell.to(self.device)
+            hx = None
             for snp_batch_index in range(self.train_loader.num_snp_batches):
                 data = self.train_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                (hidden, cell), logits = self.model(data, hidden, cell)
+                logits, hx = self.model.forward(data, hx)
             targets = self.train_loader.get_target_batch(genome_batch_index).to(self.device)
             loss = self.criterion(logits, targets)
             loss.backward()
@@ -128,11 +138,10 @@ class LSTMAttackerTrainer:
         self.model.eval()
         with torch.no_grad():
             for genome_batch_index in range(self.eval_loader.num_genome_batches):
-                hidden, cell = self.model.get_hx(self.eval_loader.get_genome_batch_size(genome_batch_index))
-                hidden, cell = hidden.to(self.device), cell.to(self.device)
+                hx = None
                 for snp_batch_index in range(self.eval_loader.num_snp_batches):
                     data = self.eval_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                    (hidden, cell), logits = self.model(data, hidden, cell)
+                    logits, hx = self.model.forward(data, hx)
                 targets = self.eval_loader.get_target_batch(genome_batch_index).to(self.device)
                 loss += self.criterion(logits, targets).item()
                 pred = self.model.classify(self.model.predict(logits)).long()
@@ -184,56 +193,140 @@ class LSTMAttackerTrainer:
 
     @property
     def num_epoches_trained(self) -> int:
+        """
+        Returns the number of epochs trained.
+
+        Returns:
+            int: The number of epochs trained.
+        """
         return self._num_epochs_trained
 
     @property
     def train_losses(self) -> list[float]:
+        """
+        Returns the list of training losses.
+
+        Returns:
+            list[float]: The list of training losses.
+        """
         return self._train_losses
 
     @property
     def train_accuracies(self) -> list[float]:
+        """
+        Returns the list of training accuracies.
+
+        Returns:
+            list[float]: The list of training accuracies.
+        """
         return self._train_accuracies
 
     @property
     def best_train_loss(self) -> float:
+        """
+        Returns the best training loss.
+
+        Returns:
+            float: The best training loss.
+        """
         return min(self._train_losses)
 
     @property
     def best_train_accuracy(self) -> float:
+        """
+        Returns the best training accuracy.
+
+        Returns:
+            float: The best training accuracy.
+        """
         return max(self._train_accuracies)
 
     @property
     def best_train_loss_epoch(self) -> int:
+        """
+        Returns the epoch with the best training loss.
+
+        Returns:
+            int: The epoch with the best training loss.
+        """
         return np.argmin(self._train_losses)
 
     @property
     def best_train_accuracy_epoch(self) -> int:
+        """
+        Returns the epoch with the best training accuracy.
+
+        Returns:
+            int: The epoch with the best training accuracy.
+        """
         return np.argmax(self._train_accuracies)
 
     @property
     def eval_losses(self) -> list[float]:
+        """
+        Returns the list of evaluation losses.
+
+        Returns:
+            list[float]: The list of evaluation losses.
+        """
         return self._eval_losses
 
     @property
     def eval_accuracies(self) -> list[float]:
+        """
+        Returns the list of evaluation accuracies.
+
+        Returns:
+            list[float]: The list of evaluation accuracies.
+        """
         return self._eval_accuracies
 
     @property
     def best_eval_loss(self) -> float:
+        """
+        Returns the best evaluation loss.
+
+        Returns:
+            float: The best evaluation loss.
+        """
         return min(self._eval_losses)
 
     @property
     def best_eval_accuracy(self) -> float:
+        """
+        Returns the best evaluation accuracy.
+
+        Returns:
+            float: The best evaluation accuracy.
+        """
         return max(self._eval_accuracies)
 
     @property
     def best_eval_loss_epoch(self) -> int:
+        """
+        Returns the epoch with the best evaluation loss.
+
+        Returns:
+            int: The epoch with the best evaluation loss.
+        """
         return np.argmin(self._eval_losses)
 
     @property
     def best_eval_accuracy_epoch(self) -> int:
+        """
+        Returns the epoch with the best evaluation accuracy.
+
+        Returns:
+            int: The epoch with the best evaluation accuracy.
+        """
         return np.argmax(self._eval_accuracies)
 
     @property
     def learning_rate(self) -> float:
+        """
+        Returns the current learning rate.
+
+        Returns:
+            float: The current learning rate.
+        """
         return self.optimizer.param_groups[0]['lr']

@@ -2,10 +2,11 @@ import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ConfusionMatrix
 
-from utils_attacker_lstm import ModelAttackerLSTMLinear, DataLoaderAttackerLSTM
+from . import DataLoaderAttackerLSTM
+from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
 
-class LSTMAttackerTester:
+class TesterAttackerLSTM:
     """
     LSTMAttackerTester is responsible for testing the LSTMAttacker model using various metrics.
 
@@ -88,11 +89,10 @@ class LSTMAttackerTester:
 
         with torch.no_grad():
             for genome_batch_index in range(self.test_loader.num_genome_batches):
-                hidden, cell = self.model.get_hx(self.test_loader.get_genome_batch_size(genome_batch_index))
-                hidden, cell = hidden.to(self.device), cell.to(self.device)
+                hx = None
                 for snp_batch_index in range(self.test_loader.num_snp_batches):
-                    features = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                    (hidden, cell), logits = self.model(features, hidden, cell)
+                    data = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
+                    logits, hx = self.model(data, hx)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 self._loss += self.criterion(logits, targets).item()
                 pred = self.model.classify(self.model.predict(logits)).long()
@@ -113,28 +113,70 @@ class LSTMAttackerTester:
 
     @property
     def loss(self) -> float:
+        """
+        Returns the average loss.
+
+        Returns:
+            float: The average loss.
+        """
         return self._loss
 
     @property
     def accuracy_score(self) -> float:
+        """
+        Returns the accuracy score.
+
+        Returns:
+            float: The accuracy score.
+        """
         return self._accuracy_score
 
     @property
     def precision_score(self) -> float:
+        """
+        Returns the precision score.
+
+        Returns:
+            float: The precision score.
+        """
         return self._precision_score
 
     @property
     def recall_score(self) -> float:
+        """
+        Returns the recall score.
+
+        Returns:
+            float: The recall score.
+        """
         return self._recall_score
 
     @property
     def f1_score(self) -> float:
+        """
+        Returns the F1 score.
+
+        Returns:
+            float: The F1 score.
+        """
         return self._f1_score
 
     @property
     def auroc_score(self) -> float:
+        """
+        Returns the AUROC score.
+
+        Returns:
+            float: The AUROC score.
+        """
         return self._auroc_score
 
     @property
     def confusion_matrix_scores(self) -> list[list[int]]:
+        """
+        Returns the confusion matrix scores.
+
+        Returns:
+            list[list[int]]: The confusion matrix scores.
+        """
         return self._confusion_matrix_scores
