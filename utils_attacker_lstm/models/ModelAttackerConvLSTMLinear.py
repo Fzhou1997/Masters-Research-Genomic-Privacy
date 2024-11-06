@@ -52,10 +52,10 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         _conv_lstm_linear_dropout_p (float): Dropout probability between the convolutional and linear layers.
         _conv_lstm_linear_dropout_first (bool): If True, dropout is applied before the linear layer.
         _conv_lstm_layer_norm (bool): If True, layer normalization is used between the convolutional and LSTM layers.
-        conv_modules (MultiLayerConv1d): The convolutional layers used in the model.
+        conv_modules (MultiLayerConv1d | nn.Identity): The convolutional layers used in the model.
         conv_lstm_activation_module (nn.Module): The activation module between the convolutional and LSTM layers.
-        conv_lstm_dropout_module (nn.Module): The dropout module between the convolutional and LSTM layers.
-        conv_lstm_layer_norm_module (nn.Module): The layer normalization module between the convolutional and LSTM layers.
+        conv_lstm_dropout_module (nn.Module | nn.Identity): The dropout module between the convolutional and LSTM layers.
+        conv_lstm_layer_norm_module (nn.Module | nn.Identity): The layer normalization module between the convolutional and LSTM layers.
     """
 
     _conv_lstm_activation: Type[nn.Module]
@@ -66,10 +66,10 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
 
     _conv_lstm_layer_norm: bool
 
-    conv_modules: MultiLayerConv1d
+    conv_modules: MultiLayerConv1d | nn.Identity
     conv_lstm_activation_module: nn.Module
-    conv_lstm_dropout_module: nn.Module
-    conv_lstm_layer_norm_module: nn.Module
+    conv_lstm_dropout_module: nn.Dropout | nn.Identity
+    conv_lstm_layer_norm_module: nn.LayerNorm | nn.Identity
 
     def __init__(self,
                  conv_num_layers: int,
@@ -177,6 +177,15 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
                                                           linear_batch_norm_momentum=linear_batch_norm_momentum,
                                                           device=device,
                                                           dtype=dtype)
+
+        assert conv_num_layers >= 0, "The number of convolutional layers must be greater than or equal to 0."
+
+        if conv_num_layers == 0:
+            self.conv_modules = nn.Identity()
+            self.conv_lstm_activation_module = nn.Identity()
+            self.conv_lstm_dropout_module = nn.Identity()
+            self.conv_lstm_layer_norm_module = nn.Identity()
+            return
 
         self.conv_modules = MultiLayerConv1d(num_layers=conv_num_layers,
                                              channel_size=conv_channel_size,
