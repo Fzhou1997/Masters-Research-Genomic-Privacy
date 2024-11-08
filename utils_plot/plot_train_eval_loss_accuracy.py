@@ -32,6 +32,8 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
 
     ax1.plot(epochs, train_loss, label="Train Loss", color="tab:red")
     ax1.plot(epochs, eval_loss, label="Eval Loss", color="tab:blue")
+    if saved_epoch is not None:
+        ax1.axvline(x=saved_epoch, color="tab:grey", linestyle="--", label="Saved Epoch")
     ax1.set_xlabel("Epoch")
     ax1.set_ylabel("Loss")
     ax1.tick_params(axis='y')
@@ -40,6 +42,8 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
 
     ax2.plot(epochs, train_accuracy, label="Train Accuracy", color="tab:red")
     ax2.plot(epochs, eval_accuracy, label="Eval Accuracy", color="tab:blue")
+    if saved_epoch is not None:
+        ax2.axvline(x=saved_epoch, color="tab:grey", linestyle="--", label="Saved Epoch")
     ax2.set_xlabel("Epoch")
     ax2.set_ylabel("Accuracy")
     ax2.tick_params(axis='y')

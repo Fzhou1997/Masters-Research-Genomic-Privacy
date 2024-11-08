@@ -1,6 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
-from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ConfusionMatrix
+from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ROC, ConfusionMatrix
 
 from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
@@ -29,6 +30,7 @@ class TesterAttackerLSTM:
     _recall_score: float
     _f1_score: float
     _auroc_score: float
+    _roc_curve: tuple[list[float], list[float], list[float]]
     _confusion_matrix_scores: list[list[int]]
 
     def __init__(self,
@@ -54,6 +56,7 @@ class TesterAttackerLSTM:
         self.precision = Precision(task='binary').to(device)
         self.recall = Recall(task='binary').to(device)
         self.auroc = AUROC(task='binary').to(device)
+        self.roc = ROC(task='binary').to(device)
         self.confusion_matrix = ConfusionMatrix(task='binary').to(device)
 
         self._loss = 0
@@ -62,6 +65,7 @@ class TesterAttackerLSTM:
         self._recall_score = 0
         self._f1_score = 0
         self._auroc_score = 0
+        self._roc_curve = ([], [], [])
         self._confusion_matrix_scores = []
 
     def test(self):
@@ -77,6 +81,7 @@ class TesterAttackerLSTM:
         self.recall.reset()
         self.f1.reset()
         self.auroc.reset()
+        self.roc.reset()
         self.confusion_matrix.reset()
 
         self._loss = 0
@@ -85,6 +90,7 @@ class TesterAttackerLSTM:
         self._recall_score = 0
         self._f1_score = 0
         self._auroc_score = 0
+        self._roc_curve = ([], [], [])
         self._confusion_matrix_scores = []
 
         with torch.no_grad():
@@ -95,20 +101,24 @@ class TesterAttackerLSTM:
                     logits, hx = self.model(data, hx)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 self._loss += self.criterion(logits, targets).item()
-                pred = self.model.classify(self.model.predict(logits)).long()
+                pred = self.model.predict(logits).long()
+                clas = self.model.classify(pred).long()
                 true = targets.long()
-                self.accuracy.update(pred, true)
-                self.precision.update(pred, true)
-                self.recall.update(pred, true)
-                self.f1.update(pred, true)
-                self.auroc.update(pred, true)
-                self.confusion_matrix.update(pred, true)
+                self.accuracy.update(clas, true)
+                self.precision.update(clas, true)
+                self.recall.update(clas, true)
+                self.f1.update(clas, true)
+                self.auroc.update(clas, true)
+                self.roc.update(pred, true)
+                self.confusion_matrix.update(clas, true)
         self._loss /= self.test_loader.num_genome_batches
         self._accuracy_score = self.accuracy.compute().cpu().item()
         self._precision_score = self.precision.compute().cpu().item()
         self._recall_score = self.recall.compute().cpu().item()
         self._f1_score = self.f1.compute().cpu().item()
         self._auroc_score = self.auroc.compute().cpu().item()
+        fpr, tpr, thresholds = self.roc.compute().cpu()
+        self._roc_curve = (fpr.tolist(), tpr.tolist(), thresholds.tolist())
         self._confusion_matrix_scores = self.confusion_matrix.compute().cpu().tolist()
 
     @property
@@ -170,6 +180,16 @@ class TesterAttackerLSTM:
             float: The AUROC score.
         """
         return self._auroc_score
+
+    @property
+    def roc_curve(self) -> tuple[list[float], list[float], list[float]]:
+        """
+        Returns the ROC curve.
+
+        Returns:
+            tuple[list[float], list[float], list[float]]: The ROC curve.
+        """
+        return self._roc_curve
 
     @property
     def confusion_matrix_scores(self) -> list[list[int]]:
