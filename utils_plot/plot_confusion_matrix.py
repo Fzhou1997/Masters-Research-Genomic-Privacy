@@ -41,7 +41,7 @@ def plot_confusion_matrix(confusion_matrix: list[list[int]] | npt.NDArray[np.int
 
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    vmin = np.min(confusion_matrix)
+    vmin = 0
     vmax = np.max(confusion_matrix)
 
     mask = np.eye(num_classes, dtype=bool)

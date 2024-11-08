@@ -101,7 +101,7 @@ class TesterAttackerLSTM:
                     logits, hx = self.model(data, hx)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 self._loss += self.criterion(logits, targets).item()
-                pred = self.model.predict(logits).long()
+                pred = self.model.predict(logits)
                 clas = self.model.classify(pred).long()
                 true = targets.long()
                 self.accuracy.update(clas, true)
@@ -117,8 +117,8 @@ class TesterAttackerLSTM:
         self._recall_score = self.recall.compute().cpu().item()
         self._f1_score = self.f1.compute().cpu().item()
         self._auroc_score = self.auroc.compute().cpu().item()
-        fpr, tpr, thresholds = self.roc.compute().cpu()
-        self._roc_curve = (fpr.tolist(), tpr.tolist(), thresholds.tolist())
+        fpr, tpr, thresholds = self.roc.compute()
+        self._roc_curve = (fpr.cpu().tolist(), tpr.cpu().tolist(), thresholds.cpu().tolist())
         self._confusion_matrix_scores = self.confusion_matrix.compute().cpu().tolist()
 
     @property

@@ -5,11 +5,13 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from torch.nn.utils import clip_grad_norm_
-from torch.optim.lr_scheduler import LRScheduler
+from torch.optim.lr_scheduler import LRScheduler, ReduceLROnPlateau, CyclicLR, OneCycleLR
 from torchmetrics import Accuracy, Metric
 
 from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
+
+
 
 
 class TrainerAttackerLSTM:
@@ -114,7 +116,7 @@ class TrainerAttackerLSTM:
             if self.max_grad_norm is not None:
                 clip_grad_norm_(self.model.parameters(), self.max_grad_norm, self.norm_type)
             self.optimizer.step()
-            if self.scheduler is not None:
+            if self.scheduler is not None and (isinstance(self.scheduler, CyclicLR) or isinstance(self.scheduler, OneCycleLR)):
                 self.scheduler.step()
             running_loss += loss.item()
             pred = self.model.classify(self.model.predict(logits)).long()
@@ -175,6 +177,11 @@ class TrainerAttackerLSTM:
             train_accuracy = self._train_accuracies[-1]
             eval_loss = self._eval_losses[-1]
             eval_accuracy = self._eval_accuracies[-1]
+            if self.scheduler is not None:
+                if isinstance(self.scheduler, ReduceLROnPlateau):
+                    self.scheduler.step(eval_loss)
+                elif not isinstance(self.scheduler, CyclicLR) and not isinstance(self.scheduler, OneCycleLR):
+                    self.scheduler.step()
             if verbose:
                 print(f'Epoch {epoch + 1}/{num_epochs}')
                 print(f'Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.2f}')
