@@ -202,7 +202,7 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
                                              device=device,
                                              dtype=dtype)
 
-        assert self.conv_modules.channel_size_out == self.lstm_input_size_in, "The number of output channels from the convolutional layer must match the number of input features for the LSTM."
+        assert self.conv_modules.conv_channel_size_out == self.lstm_input_size_in, "The number of output channels from the convolutional layer must match the number of input features for the LSTM."
 
         self._conv_lstm_activation = conv_lstm_activation
         self._conv_lstm_activation_kwargs = conv_lstm_activation_kwargs
@@ -213,9 +213,7 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         self._conv_lstm_layer_norm = conv_lstm_layer_norm
 
         if conv_lstm_activation is not None:
-            self.conv_lstm_activation_module = conv_lstm_activation(**conv_lstm_activation_kwargs,
-                                                                    device=device,
-                                                                    dtype=dtype)
+            self.conv_lstm_activation_module = conv_lstm_activation(**conv_lstm_activation_kwargs)
         else:
             self.conv_lstm_activation_module = nn.Identity()
 
@@ -260,7 +258,9 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             int: Number of convolutional layers.
         """
-        return self.conv_modules.num_layers
+        if isinstance(self.conv_modules, nn.Identity):
+            return 0
+        return self.conv_modules.conv_num_layers
 
     @property
     def conv_channel_size_in(self) -> int:
@@ -270,6 +270,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             int: Number of input channels.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return self.lstm_input_size_in
         return self.conv_modules.conv_channel_size_in
 
     @property
@@ -280,6 +282,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             int: Number of output channels.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return self.lstm_input_size_in
         return self.conv_modules.conv_channel_size_out
 
     @property
@@ -290,6 +294,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[int, ...]: Number of output channels.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_channel_size
 
     @property
@@ -300,6 +306,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[int, ...]: Kernel size.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_kernel_size
 
     @property
@@ -310,6 +318,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[int, ...]: Stride.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_stride
 
     @property
@@ -320,6 +330,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[int, ...]: Dilation.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_dilation
 
     @property
@@ -330,6 +342,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[int, ...]: Number of groups.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_groups
 
     @property
@@ -340,6 +354,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[Type[nn.Module], ...]: Activation function.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_activation
 
     @property
@@ -350,6 +366,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[dict[str, any], ...]: Activation function keyword arguments.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_activation_kwargs
 
     @property
@@ -360,6 +378,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[float, ...]: Dropout probability.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_dropout_p
 
     @property
@@ -370,6 +390,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[bool, ...]: Dropout first.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_dropout_first
 
     @property
@@ -380,6 +402,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[bool, ...]: True if batch normalization is used, False otherwise.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_batch_norm
 
     @property
@@ -390,6 +414,8 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[float, ...]: Momentum.
         """
+        if isinstance(self.conv_modules, nn.Identity):
+            return ()
         return self.conv_modules.conv_batch_norm_momentum
 
     @property

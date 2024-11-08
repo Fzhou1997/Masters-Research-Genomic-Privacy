@@ -1,8 +1,8 @@
-from typing import Sequence, Union
+from typing import Sequence, Union, Self, Optional
 
 import torch
 from torch import nn, Size, Tensor
-
+from torch._prims_common import DeviceLikeType
 
 hx_type = tuple[tuple[Tensor, ...], tuple[Tensor, ...]]
 
@@ -74,7 +74,7 @@ class MultiLayerLSTM(nn.Module):
                  bias: bool | Sequence[bool] = True,
                  batch_first: bool = True,
                  dropout_p: float | Sequence[float] = 0.5,
-                 dropout_inplace: bool | Sequence[bool] = True,
+                 dropout_inplace: bool | Sequence[bool] = False,
                  dropout_first: bool | Sequence[bool] = True,
                  layer_norm: bool | Sequence[bool] = True,
                  layer_norm_eps: float | Sequence[float] = 1e-5,
@@ -96,7 +96,7 @@ class MultiLayerLSTM(nn.Module):
 
             dropout_p (float or Sequence[float], optional): Dropout probability for each inner layer. Defaults to 0.5.
             dropout_inplace (bool or Sequence[bool], optional): Whether to perform dropout in-place for each inner layer. Defaults to True.
-            dropout_first (bool or Sequence[bool], optional): Whether to apply dropout before layer normalization for each inner layer. Defaults to True.
+            dropout_first (bool or Sequence[bool], optional): Whether to apply dropout before layer normalization for each inner layer. Defaults to False.
 
             layer_norm (bool or Sequence[bool], optional): Whether to apply layer normalization for each inner layer. Defaults to True.
             layer_norm_eps (float or Sequence[float], optional): Epsilon value for layer normalization. Defaults to 1e-5.
@@ -213,6 +213,27 @@ class MultiLayerLSTM(nn.Module):
             else:
                 self._layer_norm_modules.append(nn.Identity())
 
+    def to(self,
+           device: Optional[DeviceLikeType] = ...,
+           dtype: Optional[torch.dtype] = ...,
+           non_blocking: bool = ...,) -> Self:
+        """
+        Moves and/or casts the parameters and buffers.
+
+        Args:
+            device (torch.device, optional): The desired device of the parameters and buffers in this module. Defaults to None.
+            dtype (torch.dtype, optional): The desired floating point type of the parameters and buffers in this module. Defaults to None.
+            non_blocking (bool, optional): Whether to convert the tensors asynchronously. Defaults to False.
+
+        Returns:
+            Self: The module itself.
+        """
+        if device is not ...:
+            self._device = device
+        if dtype is not ...:
+            self._dtype = dtype
+        return super().to(device, dtype, non_blocking)
+
     def forward(self,
                 x: Tensor,
                 hx: hx_type = None) -> tuple[Tensor, hx_type]:
@@ -269,7 +290,7 @@ class MultiLayerLSTM(nn.Module):
         for i in range(self._lstm_num_layers):
             h_0_size_i = (self._lstm_num_directions[i],
                           batch_size,
-                          self._lstm_output_size[i])
+                          self._lstm_hidden_size[i] if self._lstm_proj_size[i] == 0 else self._lstm_proj_size[i])
             c_0_size_i = (self._lstm_num_directions[i],
                           batch_size,
                           self._lstm_hidden_size[i])
@@ -292,6 +313,10 @@ class MultiLayerLSTM(nn.Module):
         Returns:
             tuple[tuple[Tensor, ...], tuple[Tensor, ...]]: Initial hidden and cell states.
         """
+        if device is None:
+            device = next(self.parameters()).device
+        if dtype is None:
+            dtype = next(self.parameters()).dtype
         hx_size = self.get_hx_size(batch_size)
         h_0 = [torch.zeros(h_0_size_i, device=device, dtype=dtype) for h_0_size_i in hx_size[0]]
         c_0 = [torch.zeros(c_0_size_i, device=device, dtype=dtype) for c_0_size_i in hx_size[1]]

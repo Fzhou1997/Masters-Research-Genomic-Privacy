@@ -1,7 +1,7 @@
-from utils_torch.DatasetFeatureTargetClassificationBinary import BinaryClassificationDataset
+from . import DatasetFeatureTargetClassificationBinary
 
 
-class SequentialBinaryClassificationDataset(BinaryClassificationDataset):
+class DatasetFeatureTargetClassificationBinarySequential(DatasetFeatureTargetClassificationBinary):
 
     @property
     def num_timesteps(self) -> int:

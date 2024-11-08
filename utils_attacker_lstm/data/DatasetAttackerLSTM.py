@@ -1,14 +1,12 @@
-from typing import Literal
-
 import numpy as np
 import numpy.typing as npt
 import torch
 from torch import tensor
 
-from utils_torch.DatasetFeatureTargetClassificationBinarySequential import SequentialBinaryClassificationDataset
+from utils_torch.data import DatasetFeatureTargetClassificationBinarySequential
 
 
-class DatasetAttackerLSTM(SequentialBinaryClassificationDataset):
+class DatasetAttackerLSTM(DatasetFeatureTargetClassificationBinarySequential):
     """
     An abstract base class for attacker datasets.
 

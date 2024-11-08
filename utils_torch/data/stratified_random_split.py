@@ -1,12 +1,12 @@
 import random
 from typing import Any
 
-from .DatasetFeatureTargetClassificationBinary import BinaryClassificationDataset
-from .SubsetFeatureTarget import SubsetFeatureTarget
+from . import DatasetFeatureTargetClassificationBinary
+from . import SubsetFeatureTarget
 
 
 def stratified_random_split(
-        dataset: BinaryClassificationDataset,
+        dataset: DatasetFeatureTargetClassificationBinary,
         ratios: list[float]) -> list[SubsetFeatureTarget]:
     classes = dataset.classes.tolist()
     num_subsets = len(ratios)

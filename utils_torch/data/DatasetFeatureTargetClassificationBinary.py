@@ -1,10 +1,10 @@
 import torch
 from torch import Tensor
 
-from utils_torch.DatasetFeatureTarget import DatasetFeatureTarget
+from . import DatasetFeatureTarget
 
 
-class BinaryClassificationDataset(DatasetFeatureTarget):
+class DatasetFeatureTargetClassificationBinary(DatasetFeatureTarget):
 
     @property
     def num_samples(self) -> int:

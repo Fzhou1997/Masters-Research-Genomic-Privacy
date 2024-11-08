@@ -4,7 +4,7 @@ import random
 from torch import Tensor
 from torch.utils.data import DataLoader, Subset
 
-from utils_torch.SubsetFeatureTarget import SubsetFeatureTarget
+from utils_torch.data import SubsetFeatureTarget
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 

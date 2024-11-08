@@ -111,7 +111,7 @@ class MultiLayerConv1d(nn.Module):
                  activation: Type[nn.Module] | Sequence[Type[nn.Module]] = nn.ReLU,
                  activation_kwargs: dict[str, any] | Sequence[dict[str, any]] = None,
                  dropout_p: float | Sequence[float] = 0.5,
-                 dropout_inplace: bool | Sequence[bool] = True,
+                 dropout_inplace: bool | Sequence[bool] = False,
                  dropout_first: bool | Sequence[bool] = True,
                  batch_norm: bool | Sequence[bool] = True,
                  batch_norm_eps: float | Sequence[float] = 1e-5,

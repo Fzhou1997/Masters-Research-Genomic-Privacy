@@ -91,7 +91,7 @@ class MultiLayerLinear(nn.Module):
                  activation: Type[nn.Module] | Sequence[Type[nn.Module]] = nn.ReLU,
                  activation_kwargs: dict[str, any] | Sequence[dict[str, any]] = None,
                  dropout_p: float | Sequence[float] = 0.5,
-                 dropout_inplace: bool | Sequence[bool] = True,
+                 dropout_inplace: bool | Sequence[bool] = False,
                  dropout_first: bool | Sequence[bool] = True,
                  batch_norm: bool | Sequence[bool] = True,
                  batch_norm_eps: float | Sequence[float] = 1e-5,
@@ -216,9 +216,7 @@ class MultiLayerLinear(nn.Module):
                                                        dtype=dtype))
             if i >= self._inner_num_layers:
                 continue
-            self._multi_layer_modules.append(activation[i](**activation_kwargs[i],
-                                                           device=device,
-                                                           dtype=dtype))
+            self._multi_layer_modules.append(activation[i](**activation_kwargs[i]))
             if dropout_first[i]:
                 if dropout_p[i] > 0:
                     self._multi_layer_modules.append(nn.Dropout(p=dropout_p[i],

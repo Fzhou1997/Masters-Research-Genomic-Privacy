@@ -140,7 +140,9 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
         _, (hy, cy) = self.lstm_modules.forward(x, hx)
         hy_last = hy[-1]
         if self.lstm_bidirectional[-1]:
-            hy_last = torch.cat((hy_last[-2, :, :], hy_last[-1, :, :]), dim=0)
+            hy_last = torch.cat((hy_last[-2], hy_last[-1]), dim=1)
+        else:
+            hy_last = hy_last[-1]
         y = hy_last
         if self.lstm_linear_dropout_first:
             y = self.lstm_linear_dropout_module(y)

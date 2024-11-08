@@ -8,7 +8,7 @@ from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import LRScheduler
 from torchmetrics import Accuracy, Metric
 
-from . import DataLoaderAttackerLSTM
+from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
 

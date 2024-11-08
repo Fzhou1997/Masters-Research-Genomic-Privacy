@@ -4,7 +4,9 @@ from os import PathLike
 import pandas as pd
 
 from utils_attacker_lstm.data import DatasetAttackerLSTM, DataLoaderAttackerLSTM
-from . import ModelAttackerConvLSTMLinear, TrainerAttackerLSTM, TesterAttackerLSTM
+from utils_attacker_lstm.models.ModelAttackerConvLSTMLinear import ModelAttackerConvLSTMLinear
+from utils_attacker_lstm.models.TrainerAttackerLSTM import TrainerAttackerLSTM
+from utils_attacker_lstm.models.TesterAttackerLSTM import TesterAttackerLSTM
 
 # Headers for the models DataFrame
 _models_headers = [
@@ -76,6 +78,7 @@ class ManagerAttackerLSTM:
     """
 
     models_dir: str | bytes | PathLike[str] | PathLike[bytes]
+    models_file: str
     models: pd.DataFrame
 
     def __init__(self,
@@ -88,8 +91,10 @@ class ManagerAttackerLSTM:
         :param models_file: Optional CSV file containing model information.
         """
         if models_file is None:
+            self.models_file = 'models.csv'
             self.models = pd.DataFrame(columns=_models_headers)
         else:
+            self.models_file = models_file
             self.models = pd.read_csv(os.path.join(models_dir, models_file))
             for header in _models_headers:
                 if header not in self.models.columns:
@@ -191,7 +196,7 @@ class ManagerAttackerLSTM:
         model_name = f"model_attacker_{data_structure}_{model_id}"
         model.save(model_dir=self.models_dir, model_name=model_name)
 
-        self.models.to_csv(os.path.join(self.models_dir, "models.csv"))
+        self.models.to_csv(os.path.join(self.models_dir, self.models_file))
 
     def get_model(self, model_id: str) -> ModelAttackerConvLSTMLinear:
         """

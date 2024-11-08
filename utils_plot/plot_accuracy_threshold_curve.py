@@ -6,8 +6,8 @@ import numpy.typing as npt
 
 
 def plot_accuracy_threshold_curve(
-        thresholds: list[float] | npt.NDArray[np.float64],
-        accuracies: list[float] | npt.NDArray[np.float64],
+        thresholds: list[float] | npt.NDArray[np.float_],
+        accuracies: list[float] | npt.NDArray[np.float_],
         title: str = "Accuracy vs. Threshold",
         xlabel: str = "Threshold",
         ylabel: str = "Accuracy",
