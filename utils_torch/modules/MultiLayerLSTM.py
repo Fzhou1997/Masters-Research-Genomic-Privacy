@@ -1,7 +1,7 @@
-from typing import Sequence, Union, Self, Optional
+from typing import Sequence, Self, Optional
 
 import torch
-from torch import nn, Size, Tensor
+from torch import nn, Tensor
 from torch._prims_common import DeviceLikeType
 
 hx_type = tuple[tuple[Tensor, ...], tuple[Tensor, ...]]
