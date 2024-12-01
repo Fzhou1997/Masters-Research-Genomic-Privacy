@@ -4,21 +4,11 @@ import torch
 from torch import nn, Tensor
 from torch._prims_common import DeviceLikeType
 
+from utils_torch.data.OutputMultiLayerHiddenCellLSTM import OutputMultiLayerHiddenCellLSTM
 from utils_torch.modules.HiddenCellLSTM import HiddenCellLSTM
 
 
 hx_type = tuple[tuple[Tensor, ...], tuple[Tensor, ...]]
-
-y_type = tuple[
-    tuple[
-        tuple[Tensor, ...],
-        tuple[Tensor, ...]
-    ],
-    tuple[
-        tuple[Tensor, ...],
-        tuple[Tensor, ...]
-    ]
-]
 
 class MultiLayerHiddenCellLSTM(nn.Module):
     _lstm_num_layers: int
@@ -48,6 +38,19 @@ class MultiLayerHiddenCellLSTM(nn.Module):
 
     _device: torch.device
     _dtype: torch.dtype
+
+    _x_batch_dim: int
+    _x_seq_dim: int
+    _x_feature_dim: int
+    _hx_direction_dim: int
+    _hx_batch_dim: int
+    _hx_hidden_dim: int
+    _y_batch_dim: int
+    _y_seq_dim: int
+    _y_feature_dim: int
+    _hy_direction_dim: int
+    _hy_batch_dim: int
+    _hy_hidden_dim: int
 
     def __init__(self,
                  num_layers: int,
@@ -144,6 +147,19 @@ class MultiLayerHiddenCellLSTM(nn.Module):
         self._device = device
         self._dtype = dtype
 
+        self._x_batch_dim = 0 if self._lstm_batch_first else 1
+        self._x_seq_dim = 1 if self._lstm_batch_first else 0
+        self._x_feature_dim = 2
+        self._hx_direction_dim = 0
+        self._hx_batch_dim = 1
+        self._hx_hidden_dim = 2
+        self._y_batch_dim = 0 if self._lstm_batch_first else 1
+        self._y_seq_dim = 1 if self._lstm_batch_first else 0
+        self._y_feature_dim = 2
+        self._hy_direction_dim = 0
+        self._hy_batch_dim = 1
+        self._hy_hidden_dim = 2
+
         for i in range(self._lstm_num_layers):
             self._lstm_modules.append(HiddenCellLSTM(input_size=self._lstm_input_size[i],
                                                      hidden_size=self._lstm_hidden_size[i],
@@ -182,8 +198,42 @@ class MultiLayerHiddenCellLSTM(nn.Module):
 
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> tuple[Tensor, hx_type]:
-        pass #TODO: implement
+                hx: hx_type = None) -> OutputMultiLayerHiddenCellLSTM:
+
+        is_batched = x.dim() == 3
+        if not is_batched:
+            x = x.unsqueeze(self._x_batch_dim)
+        self.check_x(x)
+
+        batch_size = x.size(self._x_batch_dim)
+
+        if hx is None:
+            hx = self.get_hx(batch_size, self._device, self._dtype)
+        h_0, c_0 = hx
+        if not is_batched:
+            h_0 = tuple(h_0_i.unsqueeze(self._hx_batch_dim) for h_0_i in h_0)
+            c_0 = tuple(c_0_i.unsqueeze(self._hx_batch_dim) for c_0_i in c_0)
+        self.check_h_0(h_0, batch_size)
+        self.check_c_0(c_0, batch_size)
+
+        x_i = x
+        y_hidden = []
+        y_cell = []
+        last_hidden = []
+        last_cell = []
+        for i in range(self._lstm_num_layers):
+            h_0_i = h_0[i]
+            c_0_i = c_0[i]
+            output_i = self._lstm_modules[i](x_i, (h_0_i, c_0_i))
+            y_hidden.append(y_hidden_i)
+            y_cell.append(y_cell_i)
+            last_hidden.append(last_hidden_i)
+            last_cell.append(last_cell_i)
+            if i < self._inner_num_layers:
+                x = self._dropout_modules[i](y_hidden_i)
+                x = self._layer_norm_modules[i](x)
+            else:
+                x = y_hidden_i
 
     def get_hx_size(self,
                    batch_size: int) -> tuple[tuple[tuple[int, int, int], ...], tuple[tuple[int, int, int], ...]]:
@@ -213,29 +263,37 @@ class MultiLayerHiddenCellLSTM(nn.Module):
         c_0 = [torch.zeros(c_0_size_i, device=device, dtype=dtype) for c_0_size_i in hx_size[1]]
         return tuple(h_0), tuple(c_0)
 
-    def check_hx(self, hx: hx_type) -> None:
-        batch_size = hx[0][0].size(1)
-        hx_size = self.get_hx_size(batch_size)
-        if len(hx) != len(hx_size):
-            raise ValueError(f"MultiLayerHiddenCellLSTM: Expected hx to be a tuple of length {len(hx_size)}, got length {len(hx)} instead")
-        if len(hx[0]) != len(hx_size[0]):
-            raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to be a tuple of length {len(hx_size[0])}, got length {len(hx[0])} instead")
-        if len(hx[1]) != len(hx_size[1]):
-            raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to be a tuple of length {len(hx_size[1])}, got length {len(hx[1])} instead")
+
+    def check_h_0(self,
+                  h_0: tuple[Tensor, ...],
+                  batch_size: int) -> None:
         for i in range(self._lstm_num_layers):
-            h_0_i = hx[0][i]
-            c_0_i = hx[1][i]
-            h_0_i_size = hx_size[0][i]
-            c_0_i_size = hx_size[1][i]
-            if h_0_i.dim() != len(h_0_i_size):
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to be {len(h_0_i_size)}D, got {h_0_i.dim()}D instead")
-            if c_0_i.dim() != len(c_0_i_size):
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to be {len(c_0_i_size)}D, got {c_0_i.dim()}D instead")
-            if h_0_i.size() != h_0_i_size:
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to have size {h_0_i_size}, got size {h_0_i.size()} instead")
-            if c_0_i.size() != c_0_i_size:
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to have size {c_0_i_size}, got size {c_0_i.size()} instead")
-            if h_0_i.size(1) != batch_size:
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to have size {batch_size} in the batch dimension, got size {h_0_i.size(1)} instead")
-            if c_0_i.size(1) != batch_size:
-                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to have size {batch_size} in the batch dimension, got size {c_0_i.size(1)} instead")
+            h_0_i = h_0[i]
+            if h_0_i.dim() != 3:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to be 3D, got {h_0_i.dim()}D instead")
+            if h_0_i.size(self._hx_direction_dim) != self._lstm_num_directions[i]:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to have size {self._lstm_num_directions[i]} in the direction dimension, got size {h_0_i.size(self._hx_direction_dim)} instead")
+            if h_0_i.size(self._hx_batch_dim) != batch_size:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to have size {batch_size} in the batch dimension, got size {h_0_i.size(self._hx_batch_dim)} instead")
+            if h_0_i.size(self._hx_hidden_dim) != self._lstm_output_size[i]:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected h_0 to have size {self._lstm_output_size[i]} in the hidden dimension, got size {h_0_i.size(self._hx_hidden_dim)} instead")
+
+    def check_c_0(self,
+                  c_0: tuple[Tensor, ...],
+                  batch_size: int) -> None:
+        for i in range(self._lstm_num_layers):
+            c_0_i = c_0[i]
+            if c_0_i.dim() != 3:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to be 3D, got {c_0_i.dim()}D instead")
+            if c_0_i.size(self._hx_direction_dim) != self._lstm_num_directions[i]:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to have size {self._lstm_num_directions[i]} in the direction dimension, got size {c_0_i.size(self._hx_direction_dim)} instead")
+            if c_0_i.size(self._hx_batch_dim) != batch_size:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to have size {batch_size} in the batch dimension, got size {c_0_i.size(self._hx_batch_dim)} instead")
+            if c_0_i.size(self._hx_hidden_dim) != self._lstm_hidden_size[i]:
+                raise ValueError(f"MultiLayerHiddenCellLSTM: Expected c_0 to have size {self._lstm_hidden_size[i]} in the hidden dimension, got size {c_0_i.size(self._hx_hidden_dim)} instead")
+
+    def check_x(self, x: Tensor) -> None:
+        if x.dim() != 3 and x.dim() != 2:
+            raise ValueError(f"MultiLayerHiddenCellLSTM: Expected x to be 2D or 3D, got {x.dim()}D instead")
+        if x.size(self._x_feature_dim) != self._lstm_input_size[0]:
+            raise ValueError(f"MultiLayerHiddenCellLSTM: Expected x to have size {self._lstm_input_size[0]} in the feature dimension, got size {x.size(self._x_feature_dim)} instead")
