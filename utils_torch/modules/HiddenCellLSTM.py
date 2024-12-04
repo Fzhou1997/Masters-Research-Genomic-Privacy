@@ -1,8 +1,6 @@
 import torch
 from torch import Tensor, nn
 
-from utils_torch.data.OutputHiddenCellLSTM import OutputHiddenCellLSTM
-
 
 class HiddenCellLSTM(nn.Module):
     """
@@ -263,7 +261,7 @@ class HiddenCellLSTM(nn.Module):
 
     def forward(self,
                 x: Tensor,
-                hx: tuple[Tensor, Tensor] = None) -> OutputHiddenCellLSTM:
+                hx: tuple[Tensor, Tensor] = None) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor]]:
         """
         Performs the forward pass of the LSTM.
 
@@ -272,7 +270,7 @@ class HiddenCellLSTM(nn.Module):
             hx (tuple, optional): A tuple containing the initial hidden and cell states. Defaults to None.
 
         Returns:
-            OutputHiddenCellLSTM: An object containing the output, hidden, and cell states.
+            tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor]]: A tuple containing the output hidden and cell states.
         """
         self.check_x(x)
         if x.dim() == 2:
@@ -298,7 +296,7 @@ class HiddenCellLSTM(nn.Module):
             y_cell = torch.stack(cy_forward, dim=self._y_sequence_dim)
             last_hidden = h_i_forward
             last_cell = c_i_forward
-            return OutputHiddenCellLSTM(y_hidden, y_cell, last_hidden, last_cell, self._batch_first)
+            return (y_hidden, y_cell), (last_hidden, last_cell)
 
         hy_backward, cy_backward = [], []
         h_i_backward, c_i_backward = h_0.select(self._hx_direction_dim, 1), c_0.select(self._hx_direction_dim, 1)
@@ -316,4 +314,4 @@ class HiddenCellLSTM(nn.Module):
         y_cell = torch.cat((y_cell_forward, y_cell_backward), dim=self._y_feature_dim)
         last_hidden = torch.cat((h_i_forward, h_i_backward), dim=self._hy_direction_dim)
         last_cell = torch.cat((c_i_forward, c_i_backward), dim=self._hy_direction_dim)
-        return OutputHiddenCellLSTM(y_hidden, y_cell, last_hidden, last_cell, self._batch_first)
+        return (y_hidden, y_cell), (last_hidden, last_cell)

@@ -198,7 +198,7 @@ class MultiLayerHiddenCellLSTM(nn.Module):
 
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> OutputMultiLayerHiddenCellLSTM:
+                hx: hx_type = None) -> tuple[tuple[tuple[Tensor, ...], tuple[Tensor, ...]], tuple[tuple[Tensor, ...], tuple[Tensor, ...]]]:
 
         is_batched = x.dim() == 3
         if not is_batched:
@@ -222,18 +222,24 @@ class MultiLayerHiddenCellLSTM(nn.Module):
         last_hidden = []
         last_cell = []
         for i in range(self._lstm_num_layers):
-            h_0_i = h_0[i]
-            c_0_i = c_0[i]
-            output_i = self._lstm_modules[i](x_i, (h_0_i, c_0_i))
+            h_0_i = h_0[i].contiguous()
+            c_0_i = c_0[i].contiguous()
+            (y_hidden_i, y_cell_i), (last_hidden_i, last_cell_i) = self._lstm_modules[i](x_i, (h_0_i, c_0_i))
             y_hidden.append(y_hidden_i)
             y_cell.append(y_cell_i)
             last_hidden.append(last_hidden_i)
             last_cell.append(last_cell_i)
             if i < self._inner_num_layers:
-                x = self._dropout_modules[i](y_hidden_i)
-                x = self._layer_norm_modules[i](x)
+                x_i = self._dropout_modules[i](y_hidden_i)
+                x_i = self._layer_norm_modules[i](x_i)
             else:
-                x = y_hidden_i
+                x_i = y_hidden_i
+
+        y_hidden = tuple(y_hidden)
+        y_cell = tuple(y_cell)
+        last_hidden = tuple(last_hidden)
+        last_cell = tuple(last_cell)
+        return (y_hidden, y_cell), (last_hidden, last_cell)
 
     def get_hx_size(self,
                    batch_size: int) -> tuple[tuple[tuple[int, int, int], ...], tuple[tuple[int, int, int], ...]]:
