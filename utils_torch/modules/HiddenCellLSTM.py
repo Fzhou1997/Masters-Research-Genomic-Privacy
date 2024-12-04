@@ -52,7 +52,7 @@ class HiddenCellLSTM(nn.Module):
 
     _bidirectional: bool
     _lstm_forward: torch.nn.LSTM
-    _lstm_backward: torch.nn.LSTM
+    _lstm_backward: torch.nn.LSTM | None
 
     _batch_first: bool
     _x_batch_dim: int
@@ -124,7 +124,7 @@ class HiddenCellLSTM(nn.Module):
                                             bias=bias,
                                             batch_first=batch_first,
                                             device=device,
-                                            dtype=dtype)
+                                            dtype=dtype) if bidirectional else None
 
 
     @property
@@ -221,9 +221,11 @@ class HiddenCellLSTM(nn.Module):
         Returns:
             tuple: A tuple containing the initial hidden and cell states.
         """
+        device = next(self._lstm_forward.parameters()).device
+        dtype = next(self._lstm_forward.parameters()).dtype
         h_0_size, c_0_size = self.get_hx_size(batch_size)
-        h_0 = torch.zeros(h_0_size, device=self._lstm_forward.device, dtype=self._lstm_forward.dtype)
-        c_0 = torch.zeros(c_0_size, device=self._lstm_forward.device, dtype=self._lstm_forward.dtype)
+        h_0 = torch.zeros(h_0_size, device=device, dtype=dtype)
+        c_0 = torch.zeros(c_0_size, device=device, dtype=dtype)
         return h_0, c_0
 
     def check_hx(self, hx: tuple[Tensor, Tensor], batch_size: int) -> None:
@@ -244,21 +246,6 @@ class HiddenCellLSTM(nn.Module):
         if c_0.size() != c_0_size:
             raise ValueError(f"Expected cell state size {c_0_size}, got {c_0.size()}")
 
-    def check_x(self, x: Tensor) -> None:
-        """
-        Checks if the input tensor has the correct dimensions and feature size.
-
-        Args:
-            x (Tensor): The input tensor.
-
-        Raises:
-            ValueError: If the input tensor does not have the correct dimensions or feature size.
-        """
-        if x.dim() != 3 and x.dim() != 2:
-            raise ValueError(f"Expected input tensor of size 3 or 2, got {x.dim()}")
-        if x.size(self._x_feature_dim) != self.input_size:
-            raise ValueError(f"Expected input feature size {self.input_size}, got {x.size(self._x_feature_dim)}")
-
     def forward(self,
                 x: Tensor,
                 hx: tuple[Tensor, Tensor] = None) -> tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor]]:
@@ -272,9 +259,12 @@ class HiddenCellLSTM(nn.Module):
         Returns:
             tuple[tuple[Tensor, Tensor], tuple[Tensor, Tensor]]: A tuple containing the output hidden and cell states.
         """
-        self.check_x(x)
+        if x.dim() != 3 and x.dim() != 2:
+            raise ValueError(f"Expected input tensor of size 3 or 2, got {x.dim()}")
         if x.dim() == 2:
             x = x.unsqueeze(self._x_batch_dim)
+        if x.size(self._x_feature_dim) != self.input_size:
+            raise ValueError(f"Expected input feature size {self.input_size}, got {x.size(self._x_feature_dim)}")
         batch_size = x.size(self._x_batch_dim)
         seq_size = x.size(self._x_sequence_dim)
 
@@ -284,9 +274,10 @@ class HiddenCellLSTM(nn.Module):
         h_0, c_0 = hx
 
         hy_forward, cy_forward = [], []
-        h_i_forward, c_i_forward = h_0.select(self._hx_direction_dim, 0), c_0.select(self._hx_direction_dim, 0)
+        h_i_forward = h_0.index_select(self._hx_direction_dim, torch.tensor(0))
+        c_i_forward = c_0.index_select(self._hx_direction_dim, torch.tensor(0))
         for i in range(seq_size):
-            x_i_forward = x.select(self._x_sequence_dim, i)
+            x_i_forward = x.index_select(self._x_sequence_dim, torch.tensor(i))
             _, (h_i_forward, c_i_forward) = self._lstm_forward(x_i_forward, (h_i_forward, c_i_forward))
             hy_forward.append(h_i_forward)
             cy_forward.append(c_i_forward)
@@ -299,9 +290,10 @@ class HiddenCellLSTM(nn.Module):
             return (y_hidden, y_cell), (last_hidden, last_cell)
 
         hy_backward, cy_backward = [], []
-        h_i_backward, c_i_backward = h_0.select(self._hx_direction_dim, 1), c_0.select(self._hx_direction_dim, 1)
+        h_i_backward = h_0.index_select(self._hx_direction_dim, torch.tensor(1))
+        c_i_backward = c_0.index_select(self._hx_direction_dim, torch.tensor(1))
         for i in reversed(range(seq_size)):
-            x_i_backward = x.select(self._x_sequence_dim, i)
+            x_i_backward = x.index_select(self._x_sequence_dim, torch.tensor(i))
             _, (h_i_backward, c_i_backward) = self._lstm_backward(x_i_backward, (h_i_backward, c_i_backward))
             hy_backward.append(h_i_backward)
             cy_backward.append(c_i_backward)
