@@ -181,7 +181,7 @@ class ModelAttackerLSTMNew(nn.Module):
             self._lstm_linear_dropout_module = nn.Identity()
         if lstm_linear_batch_norm:
             self._lstm_linear_batch_norm_module = nn.BatchNorm1d(
-                num_features=self._lstm_stack.output_size,
+                num_features=self._lstm_stack.lstm_output_size_out,
                 momentum=lstm_linear_batch_norm_momentum,
                 device=device,
                 dtype=dtype)

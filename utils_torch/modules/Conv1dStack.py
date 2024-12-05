@@ -36,6 +36,7 @@ _activations = {
     "LogSoftmax"
 }
 
+
 class Conv1dStack(nn.Module):
     _conv_num_layers: int
     _inner_num_layers: int
@@ -43,7 +44,7 @@ class Conv1dStack(nn.Module):
     _conv_channel_size: tuple[int, ...]
     _conv_kernel_size: tuple[int, ...]
     _conv_stride: tuple[int, ...]
-    _conv_padding: tuple[Literal['same', 'valid'] | int | _size_1_t, ...]
+    _conv_padding: tuple[Literal['same', 'valid'] | int, ...]
     _conv_dilation: tuple[int, ...]
     _conv_groups: tuple[int, ...]
     _conv_bias: tuple[bool, ...]

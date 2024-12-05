@@ -97,7 +97,12 @@ class TesterAttackerLSTM:
                 hx = None
                 for snp_batch_index in range(self.test_loader.num_snp_batches):
                     data = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                    logits, (out, hx) = self.model.forward(data, hx)
+                    logits, out = self.model.forward(data, hx)
+                    hx = []
+                    for i, out_i in enumerate(out):
+                        _, hx_i = out_i
+                        hx.append(hx_i)
+                    hx = tuple(hx)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 self._loss += self.criterion(logits, targets).item()
                 pred = self.model.predict(logits)

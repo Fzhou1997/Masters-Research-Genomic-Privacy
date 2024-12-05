@@ -104,7 +104,6 @@ class LSTMLayerHiddenCell(nn.Module):
     def batch_first(self) -> bool:
         return self._batch_first
 
-
     @property
     def device(self) -> torch.device:
         return next(self._lstm_forward.parameters()).device
@@ -250,6 +249,8 @@ class LSTMLayerHiddenCell(nn.Module):
             cy_forward.append(c_i_forward)
 
         if not self.bidirectional:
+            hy_forward = [h_i_forward.squeeze(self._hy_direction_dim) for h_i_forward in hy_forward]
+            cy_forward = [c_i_forward.squeeze(self._hy_direction_dim) for c_i_forward in cy_forward]
             y_hidden = torch.stack(hy_forward, dim=self._y_sequence_dim)
             y_cell = torch.stack(cy_forward, dim=self._y_sequence_dim)
             last_hidden = h_i_forward
