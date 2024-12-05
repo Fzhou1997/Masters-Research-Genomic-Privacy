@@ -6,6 +6,8 @@ from torch._prims_common import DeviceLikeType
 
 hx_type = tuple[tuple[Tensor, ...], tuple[Tensor, ...]]
 
+y_type = tuple[Tensor, tuple[tuple[Tensor, ...], tuple[Tensor, ...]]]
+
 class MultiLayerLSTM(nn.Module):
     """
     A multi-layer LSTM module with optional projection, dropout, and layer normalization.
@@ -236,7 +238,7 @@ class MultiLayerLSTM(nn.Module):
 
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> tuple[Tensor, hx_type]:
+                hx: hx_type = None) -> y_type:
         """
         Forward pass for the MultiLayerLSTM module.
 

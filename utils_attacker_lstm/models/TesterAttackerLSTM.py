@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ROC, ConfusionMatrix
@@ -98,7 +97,7 @@ class TesterAttackerLSTM:
                 hx = None
                 for snp_batch_index in range(self.test_loader.num_snp_batches):
                     data = self.test_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                    logits, hx = self.model(data, hx)
+                    logits, (out, hx) = self.model.forward(data, hx)
                 targets = self.test_loader.get_target_batch(genome_batch_index).to(self.device)
                 self._loss += self.criterion(logits, targets).item()
                 pred = self.model.predict(logits)

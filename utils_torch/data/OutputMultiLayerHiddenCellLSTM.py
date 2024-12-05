@@ -10,3 +10,4 @@ class OutputMultiLayerHiddenCellLSTM:
                  last_cell: tuple[Tensor, ...],
                  batch_first: bool = False) -> None:
         pass
+        pass

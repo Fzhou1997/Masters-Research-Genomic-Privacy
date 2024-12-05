@@ -5,8 +5,9 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn.common_types import _size_1_t
 
+from utils_torch.modules import MultiLayerConv1d
+from utils_torch.modules.MultiLayerHiddenCellLSTM import hx_type, y_type
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
-from utils_torch.modules import MultiLayerConv1d, hx_type
 
 _activations = [
     "Identity",
@@ -40,6 +41,7 @@ _activations = [
     "Softmax2d",
     "LogSoftmax",
 ]
+
 
 class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
     """
@@ -231,7 +233,7 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
 
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> tuple[Tensor, hx_type]:
+                hx: hx_type = None) -> tuple[Tensor, y_type]:
         """
         Defines the forward pass of the model.
 
@@ -242,11 +244,11 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
         Returns:
             tuple[tuple[Tensor, Tensor], Tensor]: Output from the LSTM and the final hidden and cell states.
         """
-        x = x.permute(0, 2, 1) # batch, conv_in_channels, seq_len
+        x = x.permute(0, 2, 1)  # batch, conv_in_channels, seq_len
         x = self.conv_modules(x)
         x = self.conv_lstm_activation_module(x)
         x = self.conv_lstm_dropout_module(x)
-        x = x.permute(0, 2, 1) # batch, seq_len, conv_out_channels
+        x = x.permute(0, 2, 1)  # batch, seq_len, conv_out_channels
         x = self.conv_lstm_layer_norm_module(x)
         return super().forward(x, hx)
 

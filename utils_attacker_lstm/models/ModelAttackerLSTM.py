@@ -1,13 +1,13 @@
 import os
+from abc import abstractmethod
 from os import PathLike
 from typing import Self, Sequence
-from abc import abstractmethod
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
-from utils_torch.modules import MultiLayerLSTM, hx_type
+from utils_torch.modules.MultiLayerHiddenCellLSTM import MultiLayerHiddenCellLSTM, hx_type, y_type
 
 
 class ModelAttackerLSTM(nn.Module):
@@ -18,7 +18,7 @@ class ModelAttackerLSTM(nn.Module):
         lstm_modules (MultiLayerLSTM): The LSTM layers used in the model.
     """
 
-    lstm_modules: MultiLayerLSTM
+    lstm_modules: MultiLayerHiddenCellLSTM
 
     def __init__(self,
                  lstm_num_layers: int,
@@ -47,21 +47,21 @@ class ModelAttackerLSTM(nn.Module):
             dtype (torch.dtype, optional): Data type for the tensors. Defaults to None.
         """
         super(ModelAttackerLSTM, self).__init__()
-        self.lstm_modules = MultiLayerLSTM(num_layers=lstm_num_layers,
-                                           input_size=lstm_input_size,
-                                           hidden_size=lstm_hidden_size,
-                                           proj_size=lstm_proj_size,
-                                           bidirectional=lstm_bidirectional,
-                                           dropout_p=lstm_dropout_p,
-                                           dropout_first=lstm_dropout_first,
-                                           layer_norm=lstm_layer_norm,
-                                           device=device,
-                                           dtype=dtype)
+        self.lstm_modules = MultiLayerHiddenCellLSTM(num_layers=lstm_num_layers,
+                                                     input_size=lstm_input_size,
+                                                     hidden_size=lstm_hidden_size,
+                                                     proj_size=lstm_proj_size,
+                                                     bidirectional=lstm_bidirectional,
+                                                     dropout_p=lstm_dropout_p,
+                                                     dropout_first=lstm_dropout_first,
+                                                     layer_norm=lstm_layer_norm,
+                                                     device=device,
+                                                     dtype=dtype)
 
     @abstractmethod
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> tuple[Tensor, hx_type]:
+                hx: hx_type = None) -> y_type:
         """
         Defines the computation performed at every call.
 
@@ -235,7 +235,6 @@ class ModelAttackerLSTM(nn.Module):
             tuple[int, ...]: The number of directions in the LSTM.
         """
         return self.lstm_modules.lstm_num_directions
-
 
     @property
     def lstm_dropout_p(self) -> tuple[float, ...]:
