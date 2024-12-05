@@ -242,8 +242,8 @@ class LSTMLayerHiddenCell(nn.Module):
         hy_forward, cy_forward = [], []
         h_i_forward = h_0.index_select(self._hx_direction_dim, forward_idx)
         c_i_forward = c_0.index_select(self._hx_direction_dim, forward_idx)
-        for i in range(seq_size):
-            x_i_forward = x.index_select(self._x_sequence_dim, seq_idx[i])
+        for time_step in range(seq_size):
+            x_i_forward = x.index_select(self._x_sequence_dim, seq_idx[time_step])
             _, (h_i_forward, c_i_forward) = self._lstm_forward(x_i_forward, (h_i_forward, c_i_forward))
             hy_forward.append(h_i_forward)
             cy_forward.append(c_i_forward)
@@ -260,18 +260,19 @@ class LSTMLayerHiddenCell(nn.Module):
         hy_backward, cy_backward = [], []
         h_i_backward = h_0.index_select(self._hx_direction_dim, backward_idx)
         c_i_backward = c_0.index_select(self._hx_direction_dim, backward_idx)
-        for i in reversed(range(seq_size)):
-            x_i_backward = x.index_select(self._x_sequence_dim, seq_idx[i])
+        for time_step in reversed(range(seq_size)):
+            x_i_backward = x.index_select(self._x_sequence_dim, seq_idx[time_step])
             _, (h_i_backward, c_i_backward) = self._lstm_backward(x_i_backward, (h_i_backward, c_i_backward))
             hy_backward.append(h_i_backward)
             cy_backward.append(c_i_backward)
-
-        y_hidden_forward = torch.stack(hy_forward, dim=self._y_sequence_dim)
-        y_hidden_backward = torch.stack(hy_backward, dim=self._y_sequence_dim)
-        y_hidden = torch.cat((y_hidden_forward, y_hidden_backward), dim=self._y_feature_dim)
-        y_cell_forward = torch.stack(cy_forward, dim=self._y_sequence_dim)
-        y_cell_backward = torch.stack(cy_backward, dim=self._y_sequence_dim)
-        y_cell = torch.cat((y_cell_forward, y_cell_backward), dim=self._y_feature_dim)
+        hy_backward.reverse()
+        cy_backward.reverse()
+        hy_forward_backward = zip(hy_forward, hy_backward)
+        hy_forward_backward = [torch.cat((h_i_forward, h_i_backward), dim=self._hy_hidden_dim).squeeze(dim=self._hy_direction_dim) for h_i_forward, h_i_backward in hy_forward_backward]
+        y_hidden = torch.stack(hy_forward_backward, dim=self._y_sequence_dim)
+        cy_forward_backward = zip(cy_forward, cy_backward)
+        cy_forward_backward = [torch.cat((c_i_forward, c_i_backward), dim=self._hy_hidden_dim).squeeze(dim=self._hy_direction_dim) for c_i_forward, c_i_backward in cy_forward_backward]
+        y_cell = torch.stack(cy_forward_backward, dim=self._y_sequence_dim)
         last_hidden = torch.cat((h_i_forward, h_i_backward), dim=self._hy_direction_dim)
         last_cell = torch.cat((c_i_forward, c_i_backward), dim=self._hy_direction_dim)
         return (y_hidden, y_cell), (last_hidden, last_cell)
