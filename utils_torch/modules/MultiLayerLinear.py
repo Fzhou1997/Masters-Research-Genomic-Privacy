@@ -216,7 +216,7 @@ class MultiLayerLinear(nn.Module):
                                                        dtype=dtype))
             if i >= self._inner_num_layers:
                 continue
-            self._multi_layer_modules.append(activation[i](**activation_kwargs[i]))
+            self._multi_layer_modules.append(self._activation[i](**self._activation_kwargs[i]))
             if dropout_first[i]:
                 if dropout_p[i] > 0:
                     self._multi_layer_modules.append(nn.Dropout(p=dropout_p[i],

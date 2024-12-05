@@ -1,42 +1,35 @@
+from os import PathLike
+
 import numpy as np
-import numpy.typing as npt
 import torch
 
+from utils_io import read_bitarrays
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
 class DatasetAttackerLSTMBeacon(DatasetAttackerLSTM):
-    """
-    A custom Dataset class for Beacon Attacker.
-
-    This dataset class handles the target genomes, pool presences, and reference frequencies,
-    and prepares the data for use in a PyTorch DataLoader.
-
-    Attributes:
-        features (torch.Tensor): The concatenated data tensor containing target genomes, pool presences, and reference frequencies.
-        targets (torch.Tensor): The targets tensor.
-    """
 
     def __init__(self,
-                 target_genomes: npt.NDArray[np.bool_],
-                 beacon_presences: npt.NDArray[np.bool_],
-                 reference_frequencies: npt.NDArray[np.float64],
-                 targets: npt.NDArray[np.bool_],
+                 genomes_beacon_path: str | bytes | PathLike[str] | PathLike[bytes],
+                 genomes_reference_path: str | bytes | PathLike[str] | PathLike[bytes],
+                 num_snps: int,
                  dtype: torch.dtype = torch.float32):
-        """
-        Initialize the BeaconAttackerDataset.
 
-        Args:
-            target_genomes (npt.NDArray[np.bool_]): An array of target genomes.
-            beacon_presences (npt.NDArray[np.bool_]): An array of beacon presences.
-            reference_frequencies (npt.NDArray[np.float64]): An array of reference frequencies.
-            targets (npt.NDArray[np.bool_]): An array of labels.
-            dtype (torch.dtype, optional): The data type for the tensors. Defaults to torch.float32.
-        """
-        num_genomes = target_genomes.shape[0]
-        num_snps = target_genomes.shape[1]
-        target_genomes = target_genomes[..., np.newaxis]
-        beacon_presences = np.broadcast_to(beacon_presences, (num_genomes, num_snps))[..., np.newaxis]
-        reference_frequencies = np.broadcast_to(reference_frequencies, (num_genomes, num_snps))[..., np.newaxis]
-        data = np.concatenate((target_genomes, beacon_presences, reference_frequencies), axis=2)
-        super().__init__(data, targets, dtype)
+        genomes_beacon = read_bitarrays(genomes_beacon_path)[:, :num_snps]
+        genomes_reference = read_bitarrays(genomes_reference_path)[:, :num_snps]
+        genomes = np.concatenate((genomes_beacon, genomes_reference), axis=0)
+        labels_beacon = np.ones(genomes_beacon.shape[0], dtype=bool)
+        labels_reference = np.zeros(genomes_reference.shape[0], dtype=bool)
+        labels = np.concatenate((labels_beacon, labels_reference), axis=0).astype(bool)
+        presences_beacon = np.any(genomes_beacon, axis=0).astype(bool)
+        frequencies_reference = np.mean(genomes, axis=0)
+
+        num_genomes = genomes.shape[0]
+        genomes = genomes[..., np.newaxis]
+        presences_beacon = np.broadcast_to(presences_beacon, (num_genomes, num_snps))[..., np.newaxis]
+        frequencies_reference = np.broadcast_to(frequencies_reference, (num_genomes, num_snps))[..., np.newaxis]
+        data = np.concatenate((genomes, presences_beacon, frequencies_reference), axis=2)
+
+        super().__init__(features=data,
+                         targets=labels,
+                         dtype=dtype)

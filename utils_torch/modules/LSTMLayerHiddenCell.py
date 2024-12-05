@@ -67,6 +67,10 @@ class LSTMLayerHiddenCell(nn.Module):
                                             dtype=dtype) if bidirectional else None
 
     @property
+    def num_layers(self) -> int:
+        return 1
+
+    @property
     def input_size(self) -> int:
         return self._lstm_forward.input_size
 
@@ -80,7 +84,9 @@ class LSTMLayerHiddenCell(nn.Module):
 
     @property
     def output_size(self) -> int:
-        return self.hidden_size if self.proj_size == 0 else self.proj_size
+        output_size = self.hidden_size if self.proj_size == 0 else self.proj_size
+        output_size *= self.num_directions
+        return output_size
 
     @property
     def bidirectional(self) -> bool:
@@ -91,12 +97,13 @@ class LSTMLayerHiddenCell(nn.Module):
         return 2 if self.bidirectional else 1
 
     @property
-    def num_layers(self) -> int:
-        return 1
+    def bias(self) -> bool:
+        return self._lstm_forward.bias
 
     @property
     def batch_first(self) -> bool:
         return self._batch_first
+
 
     @property
     def device(self) -> torch.device:
@@ -110,41 +117,17 @@ class LSTMLayerHiddenCell(nn.Module):
     def forward_input_weights(self) -> Tensor:
         return self._lstm_forward.weight_ih_l0
 
-    @forward_input_weights.setter
-    def forward_input_weights(self, weights: Tensor) -> None:
-        if weights.shape != self._lstm_forward.weight_ih_l0.shape:
-            raise ValueError(f"Expected input weight shape {self._lstm_forward.weight_ih_l0.shape}, got {weights.shape}")
-        self._lstm_forward.weight_ih_l0 = weights
-
     @property
     def forward_hidden_weights(self) -> Tensor:
         return self._lstm_forward.weight_hh_l0
-
-    @forward_hidden_weights.setter
-    def forward_hidden_weights(self, weights: Tensor) -> None:
-        if weights.shape != self._lstm_forward.weight_hh_l0.shape:
-            raise ValueError(f"Expected hidden weight shape {self._lstm_forward.weight_hh_l0.shape}, got {weights.shape}")
-        self._lstm_forward.weight_hh_l0 = weights
 
     @property
     def forward_input_bias(self) -> Tensor:
         return self._lstm_forward.bias_ih_l0
 
-    @forward_input_bias.setter
-    def forward_input_bias(self, bias: Tensor) -> None:
-        if bias.shape != self._lstm_forward.bias_ih_l0.shape:
-            raise ValueError(f"Expected input bias shape {self._lstm_forward.bias_ih_l0.shape}, got {bias.shape}")
-        self._lstm_forward.bias_ih_l0 = bias
-
     @property
     def forward_hidden_bias(self) -> Tensor:
         return self._lstm_forward.bias_hh_l0
-
-    @forward_hidden_bias.setter
-    def forward_hidden_bias(self, bias: Tensor) -> None:
-        if bias.shape != self._lstm_forward.bias_hh_l0.shape:
-            raise ValueError(f"Expected hidden bias shape {self._lstm_forward.bias_hh_l0.shape}, got {bias.shape}")
-        self._lstm_forward.bias_hh_l0 = bias
 
     @property
     def forward_projection_weights(self) -> Tensor | None:
@@ -152,31 +135,11 @@ class LSTMLayerHiddenCell(nn.Module):
             return None
         return self._lstm_forward.weight_hr_l0
 
-    @forward_projection_weights.setter
-    def forward_projection_weights(self, weights: Tensor | None) -> None:
-        if self.proj_size == 0:
-            return
-        if weights is None:
-            raise ValueError("Expected projection weight tensor, got None")
-        if weights.shape != self._lstm_forward.weight_hr_l0.shape:
-            raise ValueError(f"Expected projection weight shape {self._lstm_forward.weight_hr_l0.shape}, got {weights.shape}")
-        self._lstm_forward.weight_hr_l0 = weights
-
     @property
     def backward_input_weights(self) -> Tensor | None:
         if not self.bidirectional:
             return None
         return self._lstm_backward.weight_ih_l0
-
-    @backward_input_weights.setter
-    def backward_input_weights(self, weights: Tensor | None) -> None:
-        if not self.bidirectional:
-            return
-        if weights is None:
-            raise ValueError("Expected input weight tensor, got None")
-        if weights.shape != self._lstm_backward.weight_ih_l0.shape:
-            raise ValueError(f"Expected input weight shape {self._lstm_backward.weight_ih_l0.shape}, got {weights.shape}")
-        self._lstm_backward.weight_ih_l0 = weights
 
     @property
     def backward_hidden_weights(self) -> Tensor | None:
@@ -184,47 +147,17 @@ class LSTMLayerHiddenCell(nn.Module):
             return None
         return self._lstm_backward.weight_hh_l0
 
-    @backward_hidden_weights.setter
-    def backward_hidden_weights(self, weights: Tensor | None) -> None:
-        if not self.bidirectional:
-            return
-        if weights is None:
-            raise ValueError("Expected hidden weight tensor, got None")
-        if weights.shape != self._lstm_backward.weight_hh_l0.shape:
-            raise ValueError(f"Expected hidden weight shape {self._lstm_backward.weight_hh_l0.shape}, got {weights.shape}")
-        self._lstm_backward.weight_hh_l0 = weights
-
     @property
     def backward_input_bias(self) -> Tensor | None:
         if not self.bidirectional:
             return None
         return self._lstm_backward.bias_ih_l0
 
-    @backward_input_bias.setter
-    def backward_input_bias(self, bias: Tensor | None) -> None:
-        if not self.bidirectional:
-            return
-        if bias is None:
-            raise ValueError("Expected input bias tensor, got None")
-        if bias.shape != self._lstm_backward.bias_ih_l0.shape:
-            raise ValueError(f"Expected input bias shape {self._lstm_backward.bias_ih_l0.shape}, got {bias.shape}")
-        self._lstm_backward.bias_ih_l0 = bias
-
     @property
     def backward_hidden_bias(self) -> Tensor | None:
         if not self.bidirectional:
             return None
         return self._lstm_backward.bias_hh_l0
-
-    @backward_hidden_bias.setter
-    def backward_hidden_bias(self, bias: Tensor | None) -> None:
-        if not self.bidirectional:
-            return
-        if bias is None:
-            raise ValueError("Expected hidden bias tensor, got None")
-        if bias.shape != self._lstm_backward.bias_hh_l0.shape:
-            raise ValueError(f"Expected hidden bias shape {self._lstm_backward.bias_hh_l0.shape}, got {bias.shape}")
-        self._lstm_backward.bias_hh_l0 = bias
 
     @property
     def backward_projection_weights(self) -> Tensor | None:
@@ -233,18 +166,6 @@ class LSTMLayerHiddenCell(nn.Module):
         if self.proj_size == 0:
             return None
         return self._lstm_backward.weight_hr_l0
-
-    @backward_projection_weights.setter
-    def backward_projection_weights(self, weights: Tensor | None) -> None:
-        if not self.bidirectional:
-            return
-        if self.proj_size == 0:
-            return
-        if weights is None:
-            raise ValueError("Expected projection weight tensor, got None")
-        if weights.shape != self._lstm_backward.weight_hr_l0.shape:
-            raise ValueError(f"Expected projection weight shape {self._lstm_backward.weight_hr_l0.shape}, got {weights.shape}")
-        self._lstm_backward.weight_hr_l0 = weights
 
     def get_parameters(self) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None, Tensor | None, Tensor | None, Tensor | None]:
         return (
@@ -261,7 +182,20 @@ class LSTMLayerHiddenCell(nn.Module):
         )
 
     def set_parameters(self, parameters: tuple[Tensor, Tensor, Tensor, Tensor, Tensor | None, Tensor | None, Tensor | None, Tensor | None, Tensor | None, Tensor | None]):
-        self.forward_input_weights, self.forward_hidden_weights, self.forward_input_bias, self.forward_hidden_bias, self.forward_projection_weights, self.backward_input_weights, self.backward_hidden_weights, self.backward_input_bias, self.backward_hidden_bias, self.backward_projection_weights = parameters
+        forward_input_weights, forward_hidden_weights, forward_input_bias, forward_hidden_bias, forward_projection_weights, backward_input_weights, backward_hidden_weights, backward_input_bias, backward_hidden_bias, backward_projection_weights = parameters
+        self._lstm_forward.weight_ih_l0.data = forward_input_weights
+        self._lstm_forward.weight_hh_l0.data = forward_hidden_weights
+        self._lstm_forward.bias_ih_l0.data = forward_input_bias
+        self._lstm_forward.bias_hh_l0.data = forward_hidden_bias
+        if self.proj_size != 0:
+            self._lstm_forward.weight_hr_l0.data = forward_projection_weights
+        if self.bidirectional:
+            self._lstm_backward.weight_ih_l0.data = backward_input_weights
+            self._lstm_backward.weight_hh_l0.data = backward_hidden_weights
+            self._lstm_backward.bias_ih_l0.data = backward_input_bias
+            self._lstm_backward.bias_hh_l0.data = backward_hidden_bias
+            if self.proj_size != 0:
+                self._lstm_backward.weight_hr_l0.data = backward_projection_weights
 
     def get_hx_size(self, batch_size: int) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
         h_0_size = self.num_directions, batch_size, self.hidden_size if self.proj_size == 0 else self.proj_size

@@ -107,7 +107,7 @@ class TrainerAttackerLSTM:
             hx = None
             for snp_batch_index in range(self.train_loader.num_snp_batches):
                 data = self.train_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                logits, (out, hx) = self.model.forward(data, hx)
+                logits, (_, hx) = self.model.forward(data, hx)
             targets = self.train_loader.get_target_batch(genome_batch_index).to(self.device)
             loss = self.criterion(logits, targets)
             loss.backward()
@@ -142,7 +142,7 @@ class TrainerAttackerLSTM:
                 hx = None
                 for snp_batch_index in range(self.eval_loader.num_snp_batches):
                     data = self.eval_loader.get_features_batch(genome_batch_index, snp_batch_index).to(self.device)
-                    logits, (out, hx) = self.model.forward(data, hx)
+                    logits, (_, hx) = self.model.forward(data, hx)
                 targets = self.eval_loader.get_target_batch(genome_batch_index).to(self.device)
                 loss += self.criterion(logits, targets).item()
                 pred = self.model.classify(self.model.predict(logits)).long()

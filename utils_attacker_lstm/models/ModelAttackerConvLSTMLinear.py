@@ -9,39 +9,6 @@ from utils_torch.modules import MultiLayerConv1d
 from utils_torch.modules.MultiLayerHiddenCellLSTM import hx_type, y_type
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
 
-_activations = [
-    "Identity",
-    "Threshold",
-    "ReLU",
-    "RReLU",
-    "Hardtanh",
-    "ReLU6",
-    "Sigmoid",
-    "Hardsigmoid",
-    "Tanh",
-    "SiLU",
-    "Mish",
-    "Hardswish",
-    "ELU",
-    "CELU",
-    "SELU",
-    "GLU",
-    "GELU",
-    "Hardshrink",
-    "LeakyReLU",
-    "LogSigmoid",
-    "Softplus",
-    "Softshrink",
-    "MultiheadAttention",
-    "PReLU",
-    "Softsign",
-    "Tanhshrink",
-    "Softmin",
-    "Softmax",
-    "Softmax2d",
-    "LogSoftmax",
-]
-
 
 class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
     """
