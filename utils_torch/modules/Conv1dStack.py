@@ -37,6 +37,14 @@ _activations = {
 }
 
 
+def get_seq_size_out(seq_size_in: int,
+                     kernel_size: int,
+                     stride: int,
+                     padding: int,
+                     dilation: int):
+    return (seq_size_in + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+
+
 class Conv1dStack(nn.Module):
     _conv_num_layers: int
     _inner_num_layers: int

@@ -244,7 +244,7 @@ class LSTMLayerHiddenCell(nn.Module):
         c_i_forward = c_0.index_select(self._hx_direction_dim, forward_idx)
         for time_step in range(seq_size):
             x_i_forward = x.index_select(self._x_sequence_dim, seq_idx[time_step])
-            _, (h_i_forward, c_i_forward) = self._lstm_forward(x_i_forward, (h_i_forward, c_i_forward))
+            _, (h_i_forward, c_i_forward) = self._lstm_forward(x_i_forward.contiguous(), (h_i_forward.contiguous(), c_i_forward.contiguous()))
             hy_forward.append(h_i_forward)
             cy_forward.append(c_i_forward)
 
@@ -262,7 +262,7 @@ class LSTMLayerHiddenCell(nn.Module):
         c_i_backward = c_0.index_select(self._hx_direction_dim, backward_idx)
         for time_step in reversed(range(seq_size)):
             x_i_backward = x.index_select(self._x_sequence_dim, seq_idx[time_step])
-            _, (h_i_backward, c_i_backward) = self._lstm_backward(x_i_backward, (h_i_backward, c_i_backward))
+            _, (h_i_backward, c_i_backward) = self._lstm_backward(x_i_backward.contiguous(), (h_i_backward.contiguous(), c_i_backward.contiguous()))
             hy_backward.append(h_i_backward)
             cy_backward.append(c_i_backward)
         hy_backward.reverse()
@@ -275,4 +275,4 @@ class LSTMLayerHiddenCell(nn.Module):
         y_cell = torch.stack(cy_forward_backward, dim=self._y_sequence_dim)
         last_hidden = torch.cat((h_i_forward, h_i_backward), dim=self._hy_direction_dim)
         last_cell = torch.cat((c_i_forward, c_i_backward), dim=self._hy_direction_dim)
-        return (y_hidden, y_cell), (last_hidden, last_cell)
+        return (y_hidden.contiguous(), y_cell.contiguous()), (last_hidden.contiguous(), last_cell.contiguous())

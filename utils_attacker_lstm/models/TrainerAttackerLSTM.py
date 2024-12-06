@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
 from torch.optim.lr_scheduler import LRScheduler, ReduceLROnPlateau, CyclicLR, OneCycleLR
 from torchmetrics import Accuracy, Metric
+from tqdm import tqdm
 
 from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
@@ -179,7 +180,7 @@ class TrainerAttackerLSTM:
         best_epoch = -1
         best_loss = float('inf')
         best_state_dict = None
-        for epoch in range(num_epochs):
+        for epoch in range(num_epochs) if verbose else tqdm(range(num_epochs)):
             self._train_one_epoch()
             self._eval_one_epoch()
             train_loss = self._train_losses[-1]

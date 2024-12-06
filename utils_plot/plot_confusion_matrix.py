@@ -6,13 +6,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
 
 
 def plot_confusion_matrix(confusion_matrix: list[list[int]] | npt.NDArray[np.int_],
                           task: Literal["binary", "multiclass"],
                           output_path: str | bytes | PathLike[str] | PathLike[bytes] = None,
-                          output_file: str = None) -> None:
+                          output_file: str = None,
+                          show: bool = True) -> None:
     """
     Plot the confusion matrix.
 
@@ -38,7 +38,6 @@ def plot_confusion_matrix(confusion_matrix: list[list[int]] | npt.NDArray[np.int
         else:
             confusion_matrix = np.array([[confusion_matrix[1, 1], confusion_matrix[1, 0]],
                                          [confusion_matrix[0, 1], confusion_matrix[0, 0]]])
-
 
     fig, ax = plt.subplots(figsize=(8, 6))
     vmin = 0
@@ -87,4 +86,5 @@ def plot_confusion_matrix(confusion_matrix: list[list[int]] | npt.NDArray[np.int
             output_path = os.getcwd()
         plt.savefig(os.path.join(output_path, output_file))
 
-    plt.show()
+    if show:
+        plt.show()

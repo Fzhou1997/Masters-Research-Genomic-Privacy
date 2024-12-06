@@ -12,7 +12,8 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
                                   eval_accuracy: list[float] | npt.NDArray[np.float_],
                                   saved_epoch: int = None,
                                   output_path: str | bytes | PathLike[str] | PathLike[bytes] = None,
-                                  output_file: str = None) -> None:
+                                  output_file: str = None,
+                                  show: bool = True) -> None:
     """
     Plot the training and evaluation loss and accuracy.
 
@@ -24,6 +25,7 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
         saved_epoch (int, optional): epoch to save the plot. Defaults to None.
         output_path (str | bytes | PathLike[str] | PathLike[bytes], optional): path to save the plot. Defaults to None.
         output_file (str, optional): name of the output file. Defaults to None.
+        show (bool, optional): display the plot. Defaults to True.
     """
     assert len(train_loss) == len(train_accuracy) == len(eval_loss) == len(eval_accuracy)
     epochs = list(range(1, len(train_loss) + 1))
@@ -55,4 +57,5 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
             output_path = os.getcwd()
         plt.savefig(os.path.join(output_path, output_file))
 
-    plt.show()
+    if show:
+        plt.show()

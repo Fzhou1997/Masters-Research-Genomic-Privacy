@@ -1,9 +1,9 @@
 import os
 from os import PathLike
 
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import matplotlib.pyplot as plt
 
 
 def plot_receiver_operating_characteristics_curve(
@@ -14,8 +14,8 @@ def plot_receiver_operating_characteristics_curve(
         ylabel: str = "True Positive Rate",
         title: str = "Receiver Operating Characteristics Curve",
         output_path: str | bytes | PathLike[str] | PathLike[bytes] = None,
-        output_file: str = None) -> None:
-
+        output_file: str = None,
+        show: bool = True) -> None:
     assert len(true_positive_rates) == len(false_positive_rates), \
         "The number of true positive rates and false positive rates must be the same."
 
@@ -32,4 +32,5 @@ def plot_receiver_operating_characteristics_curve(
             output_path = os.getcwd()
         plt.savefig(os.path.join(output_path, output_file))
 
-    plt.show()
+    if show:
+        plt.show()
