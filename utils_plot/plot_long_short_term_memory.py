@@ -63,3 +63,5 @@ def plot_long_short_term_memory(long_term_memory: Tensor,
 
     if show:
         plt.show()
+    else:
+        plt.close()

@@ -59,3 +59,5 @@ def plot_train_eval_loss_accuracy(train_loss: list[float] | npt.NDArray[np.float
 
     if show:
         plt.show()
+    else:
+        plt.close()

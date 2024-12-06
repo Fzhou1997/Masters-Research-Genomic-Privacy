@@ -4,8 +4,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from utils_torch.modules import MultiLayerLinear
-from utils_torch.modules.MultiLayerHiddenCellLSTM import hx_type, y_type
+from utils_torch.modules import MultiLayerLinear, hx_type
 from .ModelAttackerLSTM import ModelAttackerLSTM
 
 
@@ -129,7 +128,7 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
 
     def forward(self,
                 x: Tensor,
-                hx: hx_type = None) -> tuple[Tensor, y_type]:
+                hx: hx_type = None) -> tuple[Tensor, hx_type]:
         """
         Forward pass of the model.
 
@@ -140,13 +139,13 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
         Returns:
             tuple[Tensor, hx_type]: Output tensor and hidden state.
         """
-        (y_hidden, y_cell), (last_hidden, last_cell) = self.lstm_modules.forward(x, hx)
-        last_layer_last_hidden = last_hidden[-1]
+        _, (hy, cy) = self.lstm_modules.forward(x, hx)
+        hy_last = hy[-1]
         if self.lstm_bidirectional[-1]:
-            last_layer_last_hidden = torch.cat((last_layer_last_hidden[-2], last_layer_last_hidden[-1]), dim=1)
+            hy_last = torch.cat((hy_last[-2], hy_last[-1]), dim=1)
         else:
-            last_layer_last_hidden = last_layer_last_hidden[-1]
-        y = last_layer_last_hidden
+            hy_last = hy_last[-1]
+        y = hy_last
         if self.lstm_linear_dropout_first:
             y = self.lstm_linear_dropout_module(y)
             y = self.lstm_linear_batch_norm_module(y)
@@ -154,7 +153,7 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             y = self.lstm_linear_batch_norm_module(y)
             y = self.lstm_linear_dropout_module(y)
         y = self.linear_modules(y).squeeze()
-        return y, ((y_hidden, y_cell), (last_hidden, last_cell))
+        return y, (hy, cy)
 
     def predict(self, logits: Tensor) -> Tensor:
         """
