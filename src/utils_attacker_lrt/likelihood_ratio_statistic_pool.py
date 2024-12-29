@@ -12,7 +12,7 @@ def likelihood_ratio_statistic_pool_diploid(
 
     Parameters:
         target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
-        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
+        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the aaf.
         population_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the population.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
@@ -62,7 +62,7 @@ def likelihood_ratio_statistic_pool_haploid(
 
     Parameters:
         target_genomes (npt.NDArray[np.bool_]): Array representing the target genome with boolean values.
-        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
+        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the aaf.
         population_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the population.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
@@ -108,7 +108,7 @@ def likelihood_ratio_statistic_pool_diploid_approximate(
 
     Parameters:
         target_genomes (npt.NDArray[np.int64]): Array representing the target genomes with values 0, 1, or 2.
-        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
+        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the aaf.
         reference_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the reference population.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 
@@ -158,7 +158,7 @@ def likelihood_ratio_statistic_pool_haploid_approximate(
 
     Parameters:
         target_genomes (npt.NDArray[np.bool_]): Array representing the target genomes with boolean values.
-        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the pool.
+        pool_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the aaf.
         reference_frequencies (npt.NDArray[np.float64]): Array of alternate allele frequencies in the reference population.
         epsilon (float, optional): Small value to avoid taking log of and division by zero. Default is 1e-8.
 

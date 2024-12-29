@@ -127,7 +127,7 @@ class ManagerAttackerLSTM:
             case "DatasetAttackerLSTMBeacon":
                 data_structure = "beacon"
             case "DatasetAttackerLSTMPool":
-                data_structure = "pool"
+                data_structure = "aaf"
             case _:
                 raise ValueError(f"Unsupported data structure {data.__class__.__name__}.")
 
