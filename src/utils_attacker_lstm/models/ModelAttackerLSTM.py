@@ -41,7 +41,7 @@ _activations = {
 }
 
 
-class ModelAttackerLSTMNew(nn.Module):
+class ModelAttackerLSTM(nn.Module):
     _conv_lstm_activation: Type[nn.Module]
     _conv_lstm_activation_kwargs: dict[str, any]
 
@@ -111,7 +111,7 @@ class ModelAttackerLSTMNew(nn.Module):
                  linear_batch_norm_momentum: float = 0.1,
                  device: torch.device = None,
                  dtype: torch.dtype = None) -> None:
-        super(ModelAttackerLSTMNew, self).__init__()
+        super(ModelAttackerLSTM, self).__init__()
 
         assert conv_num_layers >= 0, "conv_num_layers must be non-negative"
         assert lstm_num_layers > 0, "lstm_num_layers must be positive"

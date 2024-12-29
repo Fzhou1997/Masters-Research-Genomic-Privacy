@@ -10,7 +10,7 @@ from torch import Tensor
 from utils_torch.modules import MultiLayerLSTM, hx_type
 
 
-class ModelAttackerLSTM(nn.Module):
+class ModelAttackerLSTMLegacy(nn.Module):
     """
     A PyTorch module for an LSTM-based attacker model.
 
@@ -46,7 +46,7 @@ class ModelAttackerLSTM(nn.Module):
             device (torch.device, optional): Device for the tensors. Defaults to None.
             dtype (torch.dtype, optional): Data type for the tensors. Defaults to None.
         """
-        super(ModelAttackerLSTM, self).__init__()
+        super(ModelAttackerLSTMLegacy, self).__init__()
         self.lstm_modules = MultiLayerLSTM(num_layers=lstm_num_layers,
                                            input_size=lstm_input_size,
                                            hidden_size=lstm_hidden_size,

@@ -1,4 +1,4 @@
-tqdm~=4.66.2
+tqdm>4.66.3
 torch~=2.2.1+cu121
 torchmetrics~=1.3.2
 numpy~=1.26.4
@@ -9,3 +9,4 @@ snps~=2.8.2
 matplotlib~=3.8.3
 seaborn~=0.13.2
 scipy~=1.12.0
+scikit-learn~=1.4.1post1

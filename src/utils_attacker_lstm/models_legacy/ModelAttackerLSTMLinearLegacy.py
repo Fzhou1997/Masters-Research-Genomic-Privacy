@@ -5,10 +5,10 @@ import torch.nn as nn
 from torch import Tensor
 
 from utils_torch.modules import MultiLayerLinear, hx_type
-from .ModelAttackerLSTM import ModelAttackerLSTM
+from .ModelAttackerLSTMLegacy import ModelAttackerLSTMLegacy
 
 
-class ModelAttackerLSTMLinear(ModelAttackerLSTM):
+class ModelAttackerLSTMLinearLegacy(ModelAttackerLSTMLegacy):
     """
     A PyTorch module for an LSTM-Linear-based attacker model.
 
@@ -82,16 +82,16 @@ class ModelAttackerLSTMLinear(ModelAttackerLSTM):
             device (torch.device, optional): The device on which to place the model. Default is None.
             dtype (torch.dtype, optional): The data type of the model parameters. Default is None.
         """
-        super(ModelAttackerLSTMLinear, self).__init__(lstm_num_layers=lstm_num_layers,
-                                                      lstm_input_size=lstm_input_size,
-                                                      lstm_hidden_size=lstm_hidden_size,
-                                                      lstm_proj_size=lstm_proj_size,
-                                                      lstm_bidirectional=lstm_bidirectional,
-                                                      lstm_dropout_p=lstm_dropout_p,
-                                                      lstm_dropout_first=lstm_dropout_first,
-                                                      lstm_layer_norm=lstm_layer_norm,
-                                                      device=device,
-                                                      dtype=dtype)
+        super(ModelAttackerLSTMLinearLegacy, self).__init__(lstm_num_layers=lstm_num_layers,
+                                                            lstm_input_size=lstm_input_size,
+                                                            lstm_hidden_size=lstm_hidden_size,
+                                                            lstm_proj_size=lstm_proj_size,
+                                                            lstm_bidirectional=lstm_bidirectional,
+                                                            lstm_dropout_p=lstm_dropout_p,
+                                                            lstm_dropout_first=lstm_dropout_first,
+                                                            lstm_layer_norm=lstm_layer_norm,
+                                                            device=device,
+                                                            dtype=dtype)
 
         assert self.lstm_output_size_out == linear_num_features[
             0], 'The output size of the LSTM must match the input size of the linear layers.'

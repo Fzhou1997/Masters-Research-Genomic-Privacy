@@ -7,14 +7,13 @@ from utils_io import read_bitarrays
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
-class DatasetAttackerLSTMPool(DatasetAttackerLSTM):
+class DatasetAttackerLSTMAAF(DatasetAttackerLSTM):
 
     def __init__(self,
                  genomes_pool_path: str | bytes | PathLike[str] | PathLike[bytes],
                  genomes_reference_path: str | bytes | PathLike[str] | PathLike[bytes],
                  num_snps: int,
                  dtype: torch.dtype = torch.float32):
-
         genomes_pool = read_bitarrays(genomes_pool_path)[:, :num_snps]
         genomes_reference = read_bitarrays(genomes_reference_path)[:, :num_snps]
         genomes = np.concatenate((genomes_pool, genomes_reference), axis=0)

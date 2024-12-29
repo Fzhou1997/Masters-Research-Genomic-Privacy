@@ -7,10 +7,10 @@ from torch.nn.common_types import _size_1_t
 
 from utils_torch.modules import MultiLayerConv1d
 from utils_torch.modules.MultiLayerHiddenCellLSTM import hx_type, y_type
-from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
+from .ModelAttackerLSTMLinearLegacy import ModelAttackerLSTMLinearLegacy
 
 
-class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
+class ModelAttackerConvLSTMLinearLegacy(ModelAttackerLSTMLinearLegacy):
     """
     A neural network model that combines a 1D convolutional layer with an LSTM and a linear layer.
     Inherits from ModelAttackerLSTMLinear.
@@ -124,28 +124,28 @@ class ModelAttackerConvLSTMLinear(ModelAttackerLSTMLinear):
             device (torch.device, optional): The desired device of the model. Default is None.
             dtype (torch.dtype, optional): The desired data type of the model. Default is None.
         """
-        super(ModelAttackerConvLSTMLinear, self).__init__(lstm_num_layers=lstm_num_layers,
-                                                          lstm_input_size=lstm_input_size,
-                                                          lstm_hidden_size=lstm_hidden_size,
-                                                          linear_num_layers=linear_num_layers,
-                                                          linear_num_features=linear_num_features,
-                                                          lstm_proj_size=lstm_proj_size,
-                                                          lstm_bidirectional=lstm_bidirectional,
-                                                          lstm_dropout_p=lstm_dropout_p,
-                                                          lstm_dropout_first=lstm_dropout_first,
-                                                          lstm_layer_norm=lstm_layer_norm,
-                                                          lstm_linear_dropout_p=lstm_linear_dropout_p,
-                                                          lstm_linear_dropout_first=lstm_linear_dropout_first,
-                                                          lstm_linear_batch_norm=lstm_linear_batch_norm,
-                                                          lstm_linear_batch_norm_momentum=lstm_linear_batch_norm_momentum,
-                                                          linear_activation=linear_activation,
-                                                          linear_activation_kwargs=linear_activation_kwargs,
-                                                          linear_dropout_p=linear_dropout_p,
-                                                          linear_dropout_first=linear_dropout_first,
-                                                          linear_batch_norm=linear_batch_norm,
-                                                          linear_batch_norm_momentum=linear_batch_norm_momentum,
-                                                          device=device,
-                                                          dtype=dtype)
+        super(ModelAttackerConvLSTMLinearLegacy, self).__init__(lstm_num_layers=lstm_num_layers,
+                                                                lstm_input_size=lstm_input_size,
+                                                                lstm_hidden_size=lstm_hidden_size,
+                                                                linear_num_layers=linear_num_layers,
+                                                                linear_num_features=linear_num_features,
+                                                                lstm_proj_size=lstm_proj_size,
+                                                                lstm_bidirectional=lstm_bidirectional,
+                                                                lstm_dropout_p=lstm_dropout_p,
+                                                                lstm_dropout_first=lstm_dropout_first,
+                                                                lstm_layer_norm=lstm_layer_norm,
+                                                                lstm_linear_dropout_p=lstm_linear_dropout_p,
+                                                                lstm_linear_dropout_first=lstm_linear_dropout_first,
+                                                                lstm_linear_batch_norm=lstm_linear_batch_norm,
+                                                                lstm_linear_batch_norm_momentum=lstm_linear_batch_norm_momentum,
+                                                                linear_activation=linear_activation,
+                                                                linear_activation_kwargs=linear_activation_kwargs,
+                                                                linear_dropout_p=linear_dropout_p,
+                                                                linear_dropout_first=linear_dropout_first,
+                                                                linear_batch_norm=linear_batch_norm,
+                                                                linear_batch_norm_momentum=linear_batch_norm_momentum,
+                                                                device=device,
+                                                                dtype=dtype)
 
         assert conv_num_layers >= 0, "The number of convolutional layers must be greater than or equal to 0."
 

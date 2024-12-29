@@ -9,15 +9,15 @@ from torch.optim.lr_scheduler import LRScheduler, ReduceLROnPlateau, CyclicLR, O
 from torchmetrics import Accuracy, Metric
 
 from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
-from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
+from .ModelAttackerLSTMLinearLegacy import ModelAttackerLSTMLinearLegacy
 
 
-class TrainerAttackerLSTMOld:
+class TrainerAttackerLSTMLegacy:
     """
     LSTMAttackerTrainer is responsible for training the LSTMAttacker model.
 
     Attributes:
-        model (ModelAttackerLSTMLinear): The LSTM model to be trained.
+        model (ModelAttackerLSTMLinearLegacy): The LSTM model to be trained.
         criterion (nn.Module): The loss function.
         optimizer (optim.Optimizer): The optimizer for training.
         scheduler (LRScheduler): The learning rate scheduler.
@@ -34,7 +34,7 @@ class TrainerAttackerLSTMOld:
         _eval_accuracies (list[float]): List of evaluation accuracies.
     """
 
-    model: ModelAttackerLSTMLinear
+    model: ModelAttackerLSTMLinearLegacy
     criterion: nn.Module
     optimizer: optim.Optimizer
     scheduler: LRScheduler
@@ -52,7 +52,7 @@ class TrainerAttackerLSTMOld:
     _eval_accuracies: list[float]
 
     def __init__(self,
-                 model: ModelAttackerLSTMLinear,
+                 model: ModelAttackerLSTMLinearLegacy,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
                  train_loader: DataLoaderAttackerLSTM,
@@ -65,7 +65,7 @@ class TrainerAttackerLSTMOld:
         Initializes the LSTMAttackerTrainer.
 
         Args:
-            model (ModelAttackerLSTMLinear): The LSTM model to be trained.
+            model (ModelAttackerLSTMLinearLegacy): The LSTM model to be trained.
             criterion (nn.Module): The loss function.
             optimizer (optim.Optimizer): The optimizer for training.
             train_loader (DataLoaderAttackerLSTM): DataLoader for training data.
