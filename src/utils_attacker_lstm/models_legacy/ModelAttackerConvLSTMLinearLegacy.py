@@ -2,11 +2,11 @@ from typing import Type, Sequence
 
 import torch
 import torch.nn as nn
-from src.utils_torch.modules.MultiLayerHiddenCellLSTM import hx_type, y_type
 from torch import Tensor
 from torch.nn.common_types import _size_1_t
 
-from src.utils_torch.modules import MultiLayerConv1d
+from src.utils_torch.modules_legacy.MultiLayerHiddenCellLSTM import hx_type, y_type
+from src.utils_torch.modules_legacy import MultiLayerConv1d
 from .ModelAttackerLSTMLinearLegacy import ModelAttackerLSTMLinearLegacy
 
 

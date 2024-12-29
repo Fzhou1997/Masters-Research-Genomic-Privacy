@@ -1,8 +1,8 @@
 import random
 from typing import Any
 
-from . import DatasetFeatureTargetClassificationBinary
-from . import SubsetFeatureTarget
+from .DatasetFeatureTargetClassificationBinary import DatasetFeatureTargetClassificationBinary
+from .SubsetFeatureTarget import SubsetFeatureTarget
 
 
 def stratified_random_split(

@@ -42,7 +42,7 @@ class MultiLayerLinear(nn.Module):
 
     Attributes:
         _linear_num_layers (int): The number of linear layers in the module.
-        num_inner_layers (int): The number of inner layers in the module.
+        _inner_num_layers (int): The number of inner layers in the module.
 
         _linear_num_features (tuple[int]): A list of the number of features in each layer.
         _linear_bias (tuple[bool]): A list of booleans indicating whether to add a learnable bias to the output.

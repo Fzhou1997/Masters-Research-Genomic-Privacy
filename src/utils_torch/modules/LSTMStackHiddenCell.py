@@ -3,7 +3,7 @@ from typing import Sequence
 import torch
 from torch import nn, Tensor
 
-from utils_torch.modules import LSTMLayerHiddenCell
+from .LSTMLayerHiddenCell import LSTMLayerHiddenCell
 
 
 class LSTMStackHiddenCell(nn.Module):

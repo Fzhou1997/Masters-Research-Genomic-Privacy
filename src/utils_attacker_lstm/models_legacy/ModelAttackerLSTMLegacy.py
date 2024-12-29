@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from utils_torch.modules import MultiLayerLSTM, hx_type
+from src.utils_torch.modules_legacy import MultiLayerLSTM, hx_type
 
 
 class ModelAttackerLSTMLegacy(nn.Module):

@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 
-from . import DatasetFeatureTarget
+from .DatasetFeatureTarget import DatasetFeatureTarget
 
 
 class DatasetFeatureTargetClassificationBinary(DatasetFeatureTarget):

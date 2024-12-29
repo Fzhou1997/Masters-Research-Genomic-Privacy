@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from utils_torch.modules import MultiLayerLinear, hx_type
+from src.utils_torch.modules_legacy import MultiLayerLinear, hx_type
 from .ModelAttackerLSTMLegacy import ModelAttackerLSTMLegacy
 
 

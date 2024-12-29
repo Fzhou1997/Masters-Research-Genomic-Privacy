@@ -1,3 +1,3 @@
-import src.utils_attacker_lstm.data
-import src.utils_attacker_lstm.models
-import src.utils_attacker_lstm.models_legacy
+from . import data
+from . import models
+from . import models_legacy

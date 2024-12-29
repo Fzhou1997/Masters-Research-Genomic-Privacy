@@ -3,7 +3,7 @@ from typing import Sequence
 from torch import Tensor, Size
 from torch.utils.data import Subset
 
-from . import DatasetFeatureTarget
+from .DatasetFeatureTarget import DatasetFeatureTarget
 
 
 class SubsetFeatureTarget(Subset[DatasetFeatureTarget]):

@@ -1,4 +1,4 @@
-from . import DatasetFeatureTargetClassificationBinary
+from .DatasetFeatureTargetClassificationBinary import DatasetFeatureTargetClassificationBinary
 
 
 class DatasetFeatureTargetClassificationBinarySequential(DatasetFeatureTargetClassificationBinary):

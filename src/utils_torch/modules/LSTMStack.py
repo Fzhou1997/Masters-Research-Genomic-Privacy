@@ -3,7 +3,7 @@ from typing import Sequence
 import torch
 from torch import nn, Tensor
 
-from src.utils_torch.modules import LSTMLayer
+from .LSTMLayer import LSTMLayer
 
 
 class LSTMStack(nn.Module):

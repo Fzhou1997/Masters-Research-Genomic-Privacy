@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ROC, ConfusionMatrix
 
-from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
+from src.utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
 from .ModelAttackerLSTMLinearLegacy import ModelAttackerLSTMLinearLegacy
 
 
