@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-def likelihood_ratio_statistic_pool_diploid(
+def likelihood_ratio_statistic_aaf_diploid(
         target_genomes: npt.NDArray[np.int64],
         pool_frequencies: npt.NDArray[np.float64],
         population_frequencies: npt.NDArray[np.float64],
@@ -52,7 +52,7 @@ def likelihood_ratio_statistic_pool_diploid(
     return np.sum(homozygous_reference_term + heterozygous_term + homozygous_alternate_term, axis=1)
 
 
-def likelihood_ratio_statistic_pool_haploid(
+def likelihood_ratio_statistic_aaf_haploid(
         target_genomes: npt.NDArray[np.bool_],
         pool_frequencies: npt.NDArray[np.float64],
         population_frequencies: npt.NDArray[np.float64],
@@ -98,7 +98,7 @@ def likelihood_ratio_statistic_pool_haploid(
     return np.sum(alternate_term + reference_term, axis=1)
 
 
-def likelihood_ratio_statistic_pool_diploid_approximate(
+def likelihood_ratio_statistic_aaf_diploid_approximate(
         target_genomes: npt.NDArray[np.int64],
         pool_frequencies: npt.NDArray[np.float64],
         reference_frequencies: npt.NDArray[np.float64],
@@ -148,7 +148,7 @@ def likelihood_ratio_statistic_pool_diploid_approximate(
     return np.sum(homozygous_reference_term + heterozygous_term + homozygous_alternate_term, axis=1)
 
 
-def likelihood_ratio_statistic_pool_haploid_approximate(
+def likelihood_ratio_statistic_aaf_haploid_approximate(
         target_genomes: npt.NDArray[np.bool_],
         pool_frequencies: npt.NDArray[np.float64],
         reference_frequencies: npt.NDArray[np.float64],
