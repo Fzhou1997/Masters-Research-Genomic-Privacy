@@ -1,2 +1,3 @@
-import utils_torch.data as data
-import utils_torch.modules as modules
+from . import data
+from . import modules
+from . import modules_legacy

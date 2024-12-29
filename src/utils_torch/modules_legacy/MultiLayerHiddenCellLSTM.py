@@ -4,7 +4,7 @@ import torch
 from torch import nn, Tensor
 from torch._prims_common import DeviceLikeType
 
-from utils_torch.modules.LSTMLayerHiddenCell import LSTMLayerHiddenCell
+from src.utils_torch.modules.LSTMLayerHiddenCell import LSTMLayerHiddenCell
 
 hx_type = tuple[tuple[Tensor, ...], tuple[Tensor, ...]]
 

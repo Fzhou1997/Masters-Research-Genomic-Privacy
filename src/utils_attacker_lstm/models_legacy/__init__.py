@@ -1,0 +1,5 @@
+from .ModelAttackerConvLSTMLinearLegacy import ModelAttackerConvLSTMLinearLegacy
+from .ModelAttackerLSTMLegacy import ModelAttackerLSTMLegacy
+from .ModelAttackerLSTMLinearLegacy import ModelAttackerLSTMLinearLegacy
+from .TesterAttackerLSTMLegacy import TesterAttackerLSTMLegacy
+from .TrainerAttackerLSTMLegacy import TrainerAttackerLSTMLegacy

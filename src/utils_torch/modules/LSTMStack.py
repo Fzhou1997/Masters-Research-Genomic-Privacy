@@ -3,7 +3,7 @@ from typing import Sequence
 import torch
 from torch import nn, Tensor
 
-from utils_torch.modules import LSTMLayer
+from src.utils_torch.modules import LSTMLayer
 
 
 class LSTMStack(nn.Module):
@@ -316,4 +316,3 @@ class LSTMStack(nn.Module):
                 x_i = self._layer_norm_modules[i](x_i)
                 x_i = self._dropout_modules[i](x_i)
         return tuple(outputs)
-
