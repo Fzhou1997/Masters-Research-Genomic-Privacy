@@ -3,10 +3,10 @@ from os import PathLike
 
 import pandas as pd
 
-from utils_attacker_lstm.data import DatasetAttackerLSTM, DataLoaderAttackerLSTM
-from utils_attacker_lstm.models.ModelAttackerConvLSTMLinear import ModelAttackerConvLSTMLinear
-from utils_attacker_lstm.models.TrainerAttackerLSTM import TrainerAttackerLSTM
-from utils_attacker_lstm.models.TesterAttackerLSTM import TesterAttackerLSTM
+from src.utils_attacker_lstm.data import DatasetAttackerLSTM, DataLoaderAttackerLSTM
+from src.utils_attacker_lstm.models.ModelAttackerLSTM import ModelAttackerLSTM
+from src.utils_attacker_lstm.models.TesterAttackerLSTM import TesterAttackerLSTM
+from src.utils_attacker_lstm.models.TrainerAttackerLSTM import TrainerAttackerLSTM
 
 # Headers for the models DataFrame
 _models_headers = [
@@ -72,6 +72,7 @@ _models_headers = [
     "tester_auroc"
 ]
 
+
 class ManagerAttackerLSTM:
     """
     Manager class for handling different LSTM-based attacker models.
@@ -108,7 +109,7 @@ class ManagerAttackerLSTM:
                   random_seed: int,
                   data: DatasetAttackerLSTM,
                   loader: DataLoaderAttackerLSTM,
-                  model: ModelAttackerConvLSTMLinear,
+                  model: ModelAttackerLSTM,
                   trainer: TrainerAttackerLSTM,
                   tester: TesterAttackerLSTM) -> None:
         """
@@ -198,7 +199,7 @@ class ManagerAttackerLSTM:
 
         self.models.to_csv(os.path.join(self.models_dir, self.models_file))
 
-    def get_model(self, model_id: str) -> ModelAttackerConvLSTMLinear:
+    def get_model(self, model_id: str) -> ModelAttackerLSTM:
         """
         Retrieve a model based on its ID.
 
@@ -208,42 +209,42 @@ class ManagerAttackerLSTM:
         if model_id not in self.models.index:
             raise ValueError(f"Model ID {model_id} not found.")
         row = self.models.loc[model_id]
-        model = ModelAttackerConvLSTMLinear(conv_num_layers=row["model_conv_num_layers"],
-                                            conv_channel_size=row["model_conv_channel_size"],
-                                            conv_kernel_size=row["model_conv_kernel_size"],
-                                            conv_stride=row["model_conv_stride"],
-                                            conv_dilation=row["model_conv_dilation"],
-                                            conv_groups=row["model_conv_groups"],
-                                            conv_activation=row["model_conv_activation"],
-                                            conv_activation_kwargs=row["model_conv_activation_kwargs"],
-                                            conv_dropout_p=row["model_conv_dropout_p"],
-                                            conv_dropout_first=row["model_conv_dropout_first"],
-                                            conv_batch_norm=row["model_conv_batch_norm"],
-                                            conv_batch_norm_momentum=row["model_conv_batch_norm_momentum"],
-                                            conv_lstm_activation=row["model_conv_lstm_activation"],
-                                            conv_lstm_activation_kwargs=row["model_conv_lstm_activation_kwargs"],
-                                            conv_lstm_dropout_p=row["model_conv_lstm_dropout_p"],
-                                            conv_lstm_dropout_first=row["model_conv_lstm_dropout_first"],
-                                            conv_lstm_layer_norm=row["model_conv_lstm_layer_norm"],
-                                            lstm_num_layers=row["model_lstm_num_layers"],
-                                            lstm_input_size=row["model_lstm_input_size"],
-                                            lstm_hidden_size=row["model_lstm_hidden_size"],
-                                            lstm_proj_size=row["model_lstm_proj_size"],
-                                            lstm_bidirectional=row["model_lstm_bidirectional"],
-                                            lstm_dropout_p=row["model_lstm_dropout_p"],
-                                            lstm_dropout_first=row["model_lstm_dropout_first"],
-                                            lstm_layer_norm=row["model_lstm_layer_norm"],
-                                            lstm_linear_dropout_p=row["model_lstm_linear_dropout_p"],
-                                            lstm_linear_dropout_first=row["model_lstm_linear_dropout_first"],
-                                            lstm_linear_batch_norm=row["model_lstm_linear_batch_norm"],
-                                            lstm_linear_batch_norm_momentum=row["model_lstm_linear_batch_norm_momentum"],
-                                            linear_num_layers=row["model_linear_num_layers"],
-                                            linear_num_features=row["model_linear_num_features"],
-                                            linear_activation=row["model_linear_activation"],
-                                            linear_activation_kwargs=row["model_linear_activation_kwargs"],
-                                            linear_dropout_p=row["model_linear_dropout_p"],
-                                            linear_dropout_first=row["model_linear_dropout_first"],
-                                            linear_batch_norm=row["model_linear_batch_norm"],
-                                            linear_batch_norm_momentum=row["model_linear_batch_norm_momentum"])
+        model = ModelAttackerLSTM(conv_num_layers=row["model_conv_num_layers"],
+                                  conv_channel_size=row["model_conv_channel_size"],
+                                  conv_kernel_size=row["model_conv_kernel_size"],
+                                  conv_stride=row["model_conv_stride"],
+                                  conv_dilation=row["model_conv_dilation"],
+                                  conv_groups=row["model_conv_groups"],
+                                  conv_activation=row["model_conv_activation"],
+                                  conv_activation_kwargs=row["model_conv_activation_kwargs"],
+                                  conv_dropout_p=row["model_conv_dropout_p"],
+                                  conv_dropout_first=row["model_conv_dropout_first"],
+                                  conv_batch_norm=row["model_conv_batch_norm"],
+                                  conv_batch_norm_momentum=row["model_conv_batch_norm_momentum"],
+                                  conv_lstm_activation=row["model_conv_lstm_activation"],
+                                  conv_lstm_activation_kwargs=row["model_conv_lstm_activation_kwargs"],
+                                  conv_lstm_dropout_p=row["model_conv_lstm_dropout_p"],
+                                  conv_lstm_dropout_first=row["model_conv_lstm_dropout_first"],
+                                  conv_lstm_layer_norm=row["model_conv_lstm_layer_norm"],
+                                  lstm_num_layers=row["model_lstm_num_layers"],
+                                  lstm_input_size=row["model_lstm_input_size"],
+                                  lstm_hidden_size=row["model_lstm_hidden_size"],
+                                  lstm_proj_size=row["model_lstm_proj_size"],
+                                  lstm_bidirectional=row["model_lstm_bidirectional"],
+                                  lstm_dropout_p=row["model_lstm_dropout_p"],
+                                  lstm_dropout_first=row["model_lstm_dropout_first"],
+                                  lstm_layer_norm=row["model_lstm_layer_norm"],
+                                  lstm_linear_dropout_p=row["model_lstm_linear_dropout_p"],
+                                  lstm_linear_dropout_first=row["model_lstm_linear_dropout_first"],
+                                  lstm_linear_batch_norm=row["model_lstm_linear_batch_norm"],
+                                  lstm_linear_batch_norm_momentum=row["model_lstm_linear_batch_norm_momentum"],
+                                  linear_num_layers=row["model_linear_num_layers"],
+                                  linear_num_features=row["model_linear_num_features"],
+                                  linear_activation=row["model_linear_activation"],
+                                  linear_activation_kwargs=row["model_linear_activation_kwargs"],
+                                  linear_dropout_p=row["model_linear_dropout_p"],
+                                  linear_dropout_first=row["model_linear_dropout_first"],
+                                  linear_batch_norm=row["model_linear_batch_norm"],
+                                  linear_batch_norm_momentum=row["model_linear_batch_norm_momentum"])
         model.load(model_dir=self.models_dir, model_name=f"model_attacker_{row['data_structure']}_{model_id}")
         return model

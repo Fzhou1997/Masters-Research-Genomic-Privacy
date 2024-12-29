@@ -3,7 +3,7 @@ import numpy.typing as npt
 import torch
 from torch import tensor
 
-from utils_torch.data import DatasetFeatureTargetClassificationBinarySequential
+from src.utils_torch.data import DatasetFeatureTargetClassificationBinarySequential
 
 
 class DatasetAttackerLSTM(DatasetFeatureTargetClassificationBinarySequential):

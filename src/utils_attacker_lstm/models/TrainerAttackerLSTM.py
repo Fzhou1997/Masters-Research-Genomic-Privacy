@@ -9,8 +9,8 @@ from torch.optim.lr_scheduler import LRScheduler, ReduceLROnPlateau, CyclicLR, O
 from torchmetrics import Accuracy, Metric
 from tqdm import tqdm
 
-from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
-from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
+from src.utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
+from .ModelAttackerLSTM import ModelAttackerLSTM
 
 
 class TrainerAttackerLSTM:
@@ -35,7 +35,7 @@ class TrainerAttackerLSTM:
         _eval_accuracies (list[float]): List of evaluation accuracies.
     """
 
-    model: ModelAttackerLSTMLinear
+    model: ModelAttackerLSTM
     criterion: nn.Module
     optimizer: optim.Optimizer
     scheduler: LRScheduler
@@ -53,7 +53,7 @@ class TrainerAttackerLSTM:
     _eval_accuracies: list[float]
 
     def __init__(self,
-                 model: ModelAttackerLSTMLinear,
+                 model: ModelAttackerLSTM,
                  criterion: nn.Module,
                  optimizer: optim.Optimizer,
                  train_loader: DataLoaderAttackerLSTM,

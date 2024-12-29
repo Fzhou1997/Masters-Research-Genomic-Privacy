@@ -3,7 +3,7 @@ from os import PathLike
 import numpy as np
 import torch
 
-from utils_io import read_bitarrays
+from src.utils_io import read_bitarrays
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 

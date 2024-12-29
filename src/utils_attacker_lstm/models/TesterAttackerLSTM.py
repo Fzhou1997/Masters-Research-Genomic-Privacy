@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from torchmetrics import Accuracy, F1Score, Precision, Recall, AUROC, ROC, ConfusionMatrix
 
-from utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
-from .ModelAttackerLSTMLinear import ModelAttackerLSTMLinear
+from src.utils_attacker_lstm.data.DataLoaderAttackerLSTM import DataLoaderAttackerLSTM
+from .ModelAttackerLSTM import ModelAttackerLSTM
 
 
 class TesterAttackerLSTM:
@@ -33,7 +33,7 @@ class TesterAttackerLSTM:
     _confusion_matrix_scores: list[list[int]]
 
     def __init__(self,
-                 model: ModelAttackerLSTMLinear,
+                 model: ModelAttackerLSTM,
                  criterion: nn.Module,
                  test_loader: DataLoaderAttackerLSTM,
                  device: torch.device):

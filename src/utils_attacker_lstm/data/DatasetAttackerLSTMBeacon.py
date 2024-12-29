@@ -3,7 +3,7 @@ from os import PathLike
 import numpy as np
 import torch
 
-from utils_io import read_bitarrays
+from src.utils_io import read_bitarrays
 from .DatasetAttackerLSTM import DatasetAttackerLSTM
 
 
@@ -14,7 +14,6 @@ class DatasetAttackerLSTMBeacon(DatasetAttackerLSTM):
                  genomes_reference_path: str | bytes | PathLike[str] | PathLike[bytes],
                  num_snps: int,
                  dtype: torch.dtype = torch.float32):
-
         genomes_beacon = read_bitarrays(genomes_beacon_path)[:, :num_snps]
         genomes_reference = read_bitarrays(genomes_reference_path)[:, :num_snps]
         genomes = np.concatenate((genomes_beacon, genomes_reference), axis=0)

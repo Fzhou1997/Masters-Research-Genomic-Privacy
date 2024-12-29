@@ -5,7 +5,7 @@ from typing import Type, Sequence, Self
 import torch
 from torch import nn, Tensor
 
-from utils_torch.modules import Conv1dStack, LSTMStack, LSTMStackHiddenCell, LinearStack
+from src.utils_torch.modules import Conv1dStack, LSTMStack, LSTMStackHiddenCell, LinearStack
 
 _activations = {
     "Identity",
